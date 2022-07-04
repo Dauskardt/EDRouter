@@ -1,0 +1,282 @@
+﻿<Window x:Class="EDRouter.View.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:EDRouter"
+        xmlns:ViewModel="clr-namespace:EDRouter.ViewModel"
+        xmlns:Converters="clr-namespace:EDRouter.View.Converter"
+        mc:Ignorable="d"
+        Title="{Binding Titel}" 
+        Height="{Binding ProgramSettings.WindowHeigth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+        Width="{Binding ProgramSettings.WindowWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+        MinHeight="610"
+        MinWidth="920"
+        Top="{Binding ProgramSettings.WindowTop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+        Left="{Binding ProgramSettings.WindowLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
+        WindowStartupLocation="CenterScreen"
+        Style="{DynamicResource CustomWindowStyle}" Closing="Window_Closing" >
+    <Window.DataContext>
+        <ViewModel:ViewModelMain/>
+    </Window.DataContext>
+    <Window.Resources>
+        <Converters:InvertableBooleanToVisibilityConverter x:Key="InvertableBooleanToVisibilityConverter"/>
+        <SolidColorBrush x:Key="TextValueColor" Color="#FF3297E8"/>
+        <SolidColorBrush x:Key="GroupBoxHeaderColor" Color="#FFD3CF25"/>
+        <Converters:InvertableBooleanToVisibilityConverter x:Key="_Converter"/>
+    </Window.Resources>
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="25"/>
+            <!--<ColumnDefinition Width="Auto"/>-->
+        </Grid.ColumnDefinitions>
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="260"/>
+                <RowDefinition/>
+                <RowDefinition Height="80"/>
+            </Grid.RowDefinitions>
+            <GroupBox Grid.Row="0">
+                <GroupBox.Header>
+                    <TextBlock Text="Schiffstatus" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                </GroupBox.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Column="0" Grid.Row="0" Text="Commander" Margin="5"/>
+                        <TextBlock Grid.Column="1" Grid.Row="0" Text="{Binding LastLoadGameEvent.Commander}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                        <TextBlock Grid.Column="0" Grid.Row="1" Text="Schiff" Margin="5"/>
+                        <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding LastLoadoutEvent.Ship}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                        <TextBlock Grid.Column="0" Grid.Row="2" Text="Tankgröße" Margin="5"/>
+                        <StackPanel Grid.Column="1" Grid.Row="2" Orientation="Horizontal">
+                            <TextBlock Text="{Binding LastLoadoutEvent.FuelCapacity.Main}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                            <TextBlock Text="Tonnen" Margin="0,5" Foreground="{StaticResource TextValueColor}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="0" Grid.Row="3" Text="Tank-Inhalt" Margin="5"/>
+                        <StackPanel Grid.Column="1" Grid.Row="3"  Orientation="Horizontal">
+                            <TextBlock Text="{Binding FuelMain}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                            <TextBlock Text="Tonnen" Margin="0,5" Foreground="{StaticResource TextValueColor}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="0" Grid.Row="4" Text="Reservoir-Inhalt" Margin="5"/>
+                        <StackPanel Grid.Column="1" Grid.Row="4" Orientation="Horizontal">
+                            <TextBlock Text="{Binding FuelReservoir}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                            <TextBlock Text="Tonnen" Margin="0,5" Foreground="{StaticResource TextValueColor}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="0" Grid.Row="5" Text="Max Jumprange" Margin="5"/>
+                        <StackPanel Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
+                            <TextBlock Text="{Binding LastLoadoutEvent.MaxJumpRange, StringFormat=\{0:N\}}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                            <TextBlock Text="Ly" Margin="0,5" Foreground="{StaticResource TextValueColor}"/>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </GroupBox>
+            <GroupBox Grid.Row="1">
+                <GroupBox.Header>
+                    <TextBlock Text="Etappe (Galmap)" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                </GroupBox.Header>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Column="0" Grid.Row="0" Text="Etappe Ziel" Margin="5"/>
+                        <TextBlock Grid.Column="1" Grid.Row="0" Text="{Binding SystemZiel}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                        <TextBlock Grid.Column="0" Grid.Row="1" Text="Sprünge:" Margin="5"/>
+                        <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Jumps}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                        <TextBlock Grid.Column="0" Grid.Row="2" Text="Standort" Margin="5"/>
+                        <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding SystemAktuell}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                        <TextBlock Grid.Column="0" Grid.Row="3" Text="Nächster Sprung" Margin="5"/>
+                        <TextBlock Grid.Column="1" Grid.Row="3" Text="{Binding SystemNächstes}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                        <TextBlock Grid.Column="0" Grid.Row="4" Text="Restsprünge" Margin="5"/>
+                        <TextBlock Grid.Column="1" Grid.Row="4" Text="{Binding Restsprünge}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                    </Grid>
+                </ScrollViewer>
+            </GroupBox>
+            <GroupBox Grid.Row="2">
+                <GroupBox.Header>
+                    <TextBlock Text="ED-API" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                </GroupBox.Header>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="35"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Column="0" Grid.Row="0" Text="Event" Margin="5" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Grid.Row="0" Text="{Binding LastAPIMessage}" Margin="5" Foreground="{StaticResource TextValueColor}" VerticalAlignment="Center"/>
+                </Grid>
+            </GroupBox>
+        </Grid>
+        <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch"/>
+        <Grid Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" Height="Auto">
+            <GroupBox HorizontalAlignment="Stretch"  Visibility="{Binding FileBrowserExpanded, Converter={StaticResource InvertableBooleanToVisibilityConverter}, ConverterParameter=Inverted}">
+            <GroupBox.Header>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Grid.Column="0" Text="Geplante Route" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                    <TextBlock Margin="10,0,0,0" Text="{Binding AktuelleRouteName}" Foreground="{StaticResource TextValueColor}"/>
+                </StackPanel>
+            </GroupBox.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="40"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid Grid.Row="0" Style="{DynamicResource DataGridStyleModern}" 
+                              ItemsSource="{Binding RouteAktuell}" 
+                              SelectionMode="Single" 
+                              SelectionUnit="FullRow" 
+                              IsReadOnly="True" 
+                              SelectedItem="{Binding SelectedEtappe,Mode=TwoWay}" 
+                              AutoGeneratingColumn="DataGrid_AutoGeneratingColumn" 
+                              CanUserSortColumns="False" 
+                              CanUserReorderColumns="False" Loaded="DataGrid_Loaded"
+                              VerticalAlignment="Stretch"
+                              HorizontalAlignment="Stretch"
+                              x:Name="DGVRoute">
+                    <DataGrid.RowStyle>
+                        <Style TargetType="{x:Type DataGridRow}">
+                            <Setter Property="Background" Value="{StaticResource BackgroundBrush}"/>
+                            <Setter Property="Foreground" Value="{StaticResource HighlightedText}"/>
+                                <Setter Property="Header" Value="{StaticResource DataGridRowHeaderStyleMod}"/>
+                            <Style.Triggers>
+                                <Trigger Property="AlternationIndex" Value="1">
+                                    <Setter Property="Background" Value="{StaticResource AlternatedRowBrush}"/>
+                                </Trigger>
+                                <Trigger Property="DataGridRow.IsSelected" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource MarkerColor}"/>
+                                    <Setter Property="Opacity" Value="1"/>
+                                </Trigger>
+                                <DataTrigger Binding="{Binding besucht}" Value="True">
+                                    <Setter Property="Foreground" Value="#FF4B4A4A" />
+                                        <Setter Property="Background" Value="#FF303030" />
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.RowStyle>
+                </DataGrid>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="50"/>
+                        <ColumnDefinition Width="50"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACRoutePlanen}" Cursor="Hand" Margin="2" >
+                        <TextBlock Text="Route planen" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACCopy}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}">
+                        <TextBlock Text="Copy" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Grid.Column="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACSetNext}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}">
+                        <TextBlock Text="+" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Grid.Column="3" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACSetPrevious}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}">
+                        <TextBlock Text="-" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                    <Button Grid.Column="4"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACRouteReset}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}">
+                        <TextBlock Text="Reset" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Button>
+                </Grid>
+            </Grid>
+            </GroupBox>
+            <GroupBox  DockPanel.Dock="Top" HorizontalAlignment="Stretch" Visibility="{Binding FileBrowserExpanded, Converter={StaticResource InvertableBooleanToVisibilityConverter}, ConverterParameter=Normal}">
+                <GroupBox.Header>
+                    <TextBlock Grid.Column="0" Text="Dateimanager" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                </GroupBox.Header>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="40"/>
+                    </Grid.RowDefinitions>
+                    <DataGrid ItemsSource="{Binding RoutenDateien}" SelectedItem="{Binding SelectedRoutenFile}" AutoGenerateColumns="False" Style="{DynamicResource DataGridStyleModern}" SelectionMode="Single" SelectionUnit="FullRow" MouseDoubleClick="DataGrid_MouseDoubleClick" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Datei">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" ToolTip="{Binding FullName}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="letzte Änderung">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding LastWriteTime, StringFormat=\{0:G\}}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Cursor="Hand" Margin="2" Width="40" Command="{Binding ACRouteFolder}">
+                            <Image Source="/Resources/folder_magnify.png" Stretch="None"/>
+                        </Button>
+                        <Button Cursor="Hand" Margin="2" Width="100" Command="{Binding ACDeleteRoutenFile}" CommandParameter="{Binding SelectedRoutenFile.FullName}">
+                            <TextBlock Text="Löschen" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                        <Button Cursor="Hand" Margin="2" Width="100" Command="{Binding ACLoadFile}" CommandParameter="{Binding SelectedRoutenFile.FullName}">
+                            <TextBlock Text="Laden" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
+                    </StackPanel>
+                </Grid>
+            </GroupBox>
+        </Grid>
+        <ToggleButton Grid.Column="3" IsChecked="{Binding FileBrowserExpanded}" Width="25" HorizontalContentAlignment="Center" VerticalContentAlignment="Top">
+            <ToggleButton.Style>
+                <Style TargetType="{x:Type ToggleButton}">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ToggleButton">
+                                <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="0" Background="{TemplateBinding Background}">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Top"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                    <Setter Property="Background" Value="#FF2D2D2D"/>
+                    <Setter Property="FontSize" Value="18"/>
+                    <Setter Property="FontWeight" Value="Bold"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Content" Value=">"/>
+                    <Style.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Content" Value="►"/>
+                            <!--<Setter Property="Foreground" Value="Red"/>-->
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="False">
+                            <Setter Property="Content" Value="◄"/>
+                            <!--<Setter Property="Foreground" Value="Red"/>-->
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </ToggleButton.Style>
+        </ToggleButton>
+    </Grid>
+</Window>
