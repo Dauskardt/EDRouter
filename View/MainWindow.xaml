@@ -10,7 +10,7 @@
         Title="{Binding Titel}" 
         Height="{Binding ProgramSettings.WindowHeigth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
         Width="{Binding ProgramSettings.WindowWidth, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-        MinHeight="610"
+        MinHeight="650"
         MinWidth="920"
         Top="{Binding ProgramSettings.WindowTop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
         Left="{Binding ProgramSettings.WindowLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
@@ -35,7 +35,7 @@
         </Grid.ColumnDefinitions>
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="260"/>
+                <RowDefinition Height="290"/>
                 <RowDefinition/>
                 <RowDefinition Height="80"/>
             </Grid.RowDefinitions>
@@ -55,6 +55,7 @@
                             <RowDefinition Height="35"/>
                             <RowDefinition Height="35"/>
                             <RowDefinition Height="35"/>
+                            <RowDefinition Height="35"/>
                             <RowDefinition/>
                         </Grid.RowDefinitions>
                         <TextBlock Grid.Column="0" Grid.Row="0" Text="Commander" Margin="5"/>
@@ -68,17 +69,27 @@
                         </StackPanel>
                         <TextBlock Grid.Column="0" Grid.Row="3" Text="Tank-Inhalt" Margin="5"/>
                         <StackPanel Grid.Column="1" Grid.Row="3"  Orientation="Horizontal">
-                            <TextBlock Text="{Binding FuelMain}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                            <TextBlock Text="{Binding FuelMain, StringFormat=N2}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
                             <TextBlock Text="Tonnen" Margin="0,5" Foreground="{StaticResource TextValueColor}"/>
+                            <TextBlock Text="{Binding FuelPercent}" Margin="0,5" Foreground="{StaticResource TextValueColor}"/>
                         </StackPanel>
                         <TextBlock Grid.Column="0" Grid.Row="4" Text="Reservoir-Inhalt" Margin="5"/>
                         <StackPanel Grid.Column="1" Grid.Row="4" Orientation="Horizontal">
-                            <TextBlock Text="{Binding FuelReservoir}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                            <TextBlock Text="{Binding FuelReservoir, StringFormat=N2}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
                             <TextBlock Text="Tonnen" Margin="0,5" Foreground="{StaticResource TextValueColor}"/>
                         </StackPanel>
-                        <TextBlock Grid.Column="0" Grid.Row="5" Text="Max Jumprange" Margin="5"/>
+                        <TextBlock Grid.Column="0" Grid.Row="5" Text="FSD-Status" Margin="5"/>
                         <StackPanel Grid.Column="1" Grid.Row="5" Orientation="Horizontal">
-                            <TextBlock Text="{Binding LastLoadoutEvent.MaxJumpRange, StringFormat=\{0:N\}}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                            <TextBlock  Text="{Binding FSDHealth, StringFormat={}{0}%}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                            <CheckBox Margin="50,0,0,7" IsChecked="{Binding FSDBoost}" IsEnabled="False">
+                                <TextBlock Text="FSD-Boost" Foreground="{StaticResource TextValueColor}"/>
+                            </CheckBox>
+                        </StackPanel>
+                       
+                        
+                        <TextBlock Grid.Column="0" Grid.Row="6" Text="Max Jumprange" Margin="5"/>
+                        <StackPanel Grid.Column="1" Grid.Row="6" Orientation="Horizontal">
+                            <TextBlock Text="{Binding LastLoadoutEvent.MaxJumpRange, StringFormat=N2}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
                             <TextBlock Text="Ly" Margin="0,5" Foreground="{StaticResource TextValueColor}"/>
                         </StackPanel>
                     </Grid>
@@ -117,7 +128,7 @@
             </GroupBox>
             <GroupBox Grid.Row="2">
                 <GroupBox.Header>
-                    <TextBlock Text="ED-API" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                    <TextBlock Text="Journal-API" Foreground="{StaticResource GroupBoxHeaderColor}"/>
                 </GroupBox.Header>
                 <Grid>
                     <Grid.ColumnDefinitions>

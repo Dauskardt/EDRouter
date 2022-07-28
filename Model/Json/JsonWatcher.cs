@@ -87,6 +87,14 @@ namespace EDRouter.Model.Json
             set { _Status = value; RPCEvent(nameof(Status)); }
         }
 
+        private Model.Events.ModulesInfoEvent _Module;
+        public Model.Events.ModulesInfoEvent Module
+        {
+            get { return _Module; }
+            set { _Module = value; RPCEvent(nameof(Module)); }
+        }
+
+
         private DateTime TimeStampMax = DateTime.Now;
 
         private DateTime LastNavRouteTimeStamp = new DateTime(1, 1, 1);
@@ -157,6 +165,35 @@ namespace EDRouter.Model.Json
             }
         }
 
+        private void GetModulesInfo(string path)
+        {
+            if (File.Exists(path))
+            {
+                System.Threading.Thread.Sleep(100);
+
+                try
+                {
+                    using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+                    {
+                        if (fs.CanRead)
+                        {
+                            using (var sr = new StreamReader(fs))
+                            {
+                                string JsonText = sr.ReadToEnd();
+
+                                Module = JsonSerializer.Deserialize<Model.Events.ModulesInfoEvent>(JsonText);
+                                OnEventRaised(new EventRaisedEventArgs(Module, Module.Event));
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print("ERROR: NavRoute - " + ex.Message);
+                }
+            }
+        }
+
         public void GetAllJsonLines(string path)
         {
             if (File.Exists(path))
@@ -175,13 +212,13 @@ namespace EDRouter.Model.Json
                             {
                                 EventTest = JsonSerializer.Deserialize<Model.Events.EventBase>(line);
 
-                                string EventTestStrg = line.Substring(47, line.IndexOf('\"', 47) - 47);
+                                //string EventTestStrg = line.Substring(47, line.IndexOf('\"', 47) - 47);
 
-                                if (EventTestStrg == "Loadout")
-                                {
-                                    Model.Events.LoadoutEvent Loadout = JsonSerializer.Deserialize<Model.Events.LoadoutEvent>(line);
-                                    OnEventRaised(new EventRaisedEventArgs(Loadout, Loadout.Event));
-                                }
+                                //if (EventTestStrg == "Loadout")
+                                //{
+                                //    Model.Events.LoadoutEvent Loadout = JsonSerializer.Deserialize<Model.Events.LoadoutEvent>(line);
+                                //    OnEventRaised(new EventRaisedEventArgs(Loadout, Loadout.Event));
+                                //}
 
 
                                 if (EventTest.timestamp > TimeStampMax)
@@ -248,9 +285,13 @@ namespace EDRouter.Model.Json
                                         //case "UnderAttack":
                                         //case "Scanned":
                                         //case "Scan":
-
+                                        case "JetConeBoost":
+                                            Model.Events.JetConeBoostEvent JetConeBoost = JsonSerializer.Deserialize<Model.Events.JetConeBoostEvent>(line);
+                                            OnEventRaised(new EventRaisedEventArgs(JetConeBoost, JetConeBoost.Event));
+                                            break;
                                         //case "Friends":
                                         //case "Shutdown":
+                                        //    break;
                                         //case "Undocked":
                                         //case "SquadronStartup":
                                         //case "ModuleInfo":
@@ -258,7 +299,14 @@ namespace EDRouter.Model.Json
                                         //case "FighterRebuilt":
                                         //case "DockFighter":
                                         //case "SAASignalsFound":
-                                        //case "RepairAll":
+                                        case "RepairAll":
+                                            Model.Events.RepairAllEvent RepairAll = JsonSerializer.Deserialize<Model.Events.RepairAllEvent>(line);
+                                            OnEventRaised(new EventRaisedEventArgs(RepairAll, RepairAll.Event));
+                                            break;
+                                        case "AfmuRepairs":
+                                            Model.Events.AfmuRepairsEvent AfmuRepairs = JsonSerializer.Deserialize<Model.Events.AfmuRepairsEvent>(line);
+                                            OnEventRaised(new EventRaisedEventArgs(AfmuRepairs, AfmuRepairs.Event));
+                                            break;
                                         //case "RedeemVoucher":
                                         //case "RestockVehicle":
                                         //case "ShipyardSwap":
@@ -334,7 +382,8 @@ namespace EDRouter.Model.Json
                                             OnEventRaised(new EventRaisedEventArgs(Loadout, Loadout.Event));
                                             break;
                                         case "Shutdown":
-                                            
+                                            Model.Events.ShutdownEvent Shutdown = JsonSerializer.Deserialize<Model.Events.ShutdownEvent>(line);
+                                            OnEventRaised(new EventRaisedEventArgs(Shutdown, Shutdown.Event));
                                             break;
                                         default:
                                             break;
@@ -342,8 +391,6 @@ namespace EDRouter.Model.Json
 
                                     Debug.Print("Last Log-Event:" + EventStrg + " [" + TimeStampMax.ToString() +"]");
                                 }
-
-                                
                                 
                                 Index++;
                             }
@@ -458,6 +505,9 @@ namespace EDRouter.Model.Json
                 case "NavRoute.json":
                     GetNavRouteJson(e.FullPath);
                     break;
+                case "ModulesInfo.json":
+                    GetModulesInfo(e.FullPath);
+                    break;
                 default:
                     if (e.Name.StartsWith("Journal"))
                     {
@@ -488,7 +538,7 @@ namespace EDRouter.Model.Json
         private void OnError(object sender, ErrorEventArgs e) =>
             PrintException(e.GetException());
 
-        private void PrintException(Exception? ex)
+        private void PrintException(Exception ex)
         {
             if (ex != null)
             {

@@ -18,7 +18,7 @@ namespace EDRouter.ViewModel
         #region Declarations..
 
         public static string Titel { get { return System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + " Version " +
-                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version +
+                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version + " .NET 5" + 
                     " [SH4DOWM4K3R " + DateTime.Now.Year + "]"; } }
 
         public string Arbeitsverzeichnis { get { return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).ToString() + "\\EDRouter"; } }
@@ -36,6 +36,13 @@ namespace EDRouter.ViewModel
 
         private string PathToImportedCSV { get; set; }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private bool _FileBrowserExpanded = false;
+        public bool FileBrowserExpanded
+        {
+            get { return _FileBrowserExpanded; }
+            set { _FileBrowserExpanded = value; RPCEvent(nameof(FileBrowserExpanded)); }
+        }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private Model.Settings _ProgramSettings = new Model.Settings();
@@ -62,6 +69,7 @@ namespace EDRouter.ViewModel
             set { _AktuelleRoutePath = value; RPCEvent(nameof(AktuelleRoutePath)); if(!string.IsNullOrEmpty(value)){ AktuelleRouteName = Path.GetFileName(value); } else { AktuelleRouteName = string.Empty; }; }
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string _AktuelleRouteName;
         public string AktuelleRouteName
         {
@@ -98,8 +106,18 @@ namespace EDRouter.ViewModel
         public double FuelMain
         {
             get { return _FuelMain; }
-            set { _FuelMain = value; RPCEvent(nameof(FuelMain)); }
+            set { _FuelMain = value; RPCEvent(nameof(FuelMain)); CalcFuelPercent(); 
+            }
         }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private string _FuelPercent;
+        public string FuelPercent
+        {
+            get { return _FuelPercent; }
+            set { _FuelPercent = value; RPCEvent(nameof(FuelPercent)); }
+        }
+
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private double _FuelReservoir = 0.0;
@@ -141,6 +159,29 @@ namespace EDRouter.ViewModel
             get { return _Tank; }
             set { _Tank = value; RPCEvent(nameof(Tank)); }
         }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private double _FSDHealth;
+        public double FSDHealth
+        {
+            get { return Math.Round(_FSDHealth * 100,0); }
+            set { _FSDHealth = value; RPCEvent(nameof(FSDHealth)); }
+        }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private bool _FSDBoost;
+        public bool FSDBoost
+        {
+            get { return _FSDBoost; }
+            set
+            {
+                _FSDBoost = value;
+                RPCEvent(nameof(FSDBoost)); 
+                if (value) { _FSDHealth = _FSDHealth - 0.01; RPCEvent(nameof(FSDHealth)); }
+                Debug.Print("### FSD-HEALTH:" + FSDHealth);
+            }
+        }
+
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string _LastAPIMessage;
@@ -212,7 +253,6 @@ namespace EDRouter.ViewModel
             get;
             set;
         }
-
         public void ACLoadRouteFileFunc(object parameter)
         {
             try
@@ -235,7 +275,6 @@ namespace EDRouter.ViewModel
             get;
             set;
         }
-
         public void ACDeleteRoutenFileFunc(object parameter)
         {
             if (parameter != null)
@@ -253,7 +292,6 @@ namespace EDRouter.ViewModel
             get;
             set;
         }
-
         public void ACHelpFunc(object parameter)
         {
             string HelpText = "Backup:\r\nClick on the 'Backup Files' button to pack the current bindings into a zip archive." +
@@ -272,7 +310,6 @@ namespace EDRouter.ViewModel
             get;
             set;
         }
-
         public void ACRouteFolderFunc(object parameter)
         {
             string RouteDir = Path.Combine(Arbeitsverzeichnis, "Routen");
@@ -283,33 +320,11 @@ namespace EDRouter.ViewModel
             }
         }
 
-
-        //public ActionCommand ACUserBackupFolder
-        //{
-        //    get;
-        //    set;
-        //}
-
-        //public void ACUserBackupFolderFunc(object parameter)
-        //{
-        //    var dialog = new System.Windows.Forms.FolderBrowserDialog();
-
-        //    dialog.Description = "Select Backup-Folder";
-
-        //    if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-        //    {
-        //        BindingsManager.BackupFolder = dialog.SelectedPath;
-        //        UserSettings.BackupFolder = dialog.SelectedPath;
-        //        SaveSettings();
-        //    }
-        //}
-
         public ActionCommand ACSetSettings
         {
             get;
             set;
         }
-
         public void ACSetSettingsFunc(object parameter)
         {
             View.Dialog.DialogSettings DlgSettings = new View.Dialog.DialogSettings();
@@ -327,7 +342,6 @@ namespace EDRouter.ViewModel
             get;
             set;
         }
-
         public void ACRoutePlanenFunc(object parameter)
         {
 
@@ -346,7 +360,6 @@ namespace EDRouter.ViewModel
             get;
             set;
         }
-
         public void ACRouteResetFunc(object parameter)
         {
             if (RouteAktuell != null)
@@ -355,10 +368,15 @@ namespace EDRouter.ViewModel
                 {
                     RouteAktuell.Reset();
                     SystemAktuell = RouteAktuell[0].System;
+
                     if (RouteAktuell.SetEtappeBesucht(SystemAktuell))
                     {
                         SystemZiel = RouteAktuell[1].System;
                         Jumps = RouteAktuell[1].Sprünge;
+
+                        CopyNextSystemToClipBoard();
+
+                        SaveRouteFile();
                     }
                 }
             }
@@ -370,7 +388,6 @@ namespace EDRouter.ViewModel
             get;
             set;
         }
-
         public void ACCopyFunc(object parameter)
         {
             if (RouteAktuell != null)
@@ -384,7 +401,6 @@ namespace EDRouter.ViewModel
             get;
             set;
         }
-
         public void ACSetNextFunc(object parameter)
         {
             if (RouteAktuell != null)
@@ -400,7 +416,6 @@ namespace EDRouter.ViewModel
             get;
             set;
         }
-
         public void ACSetPreviousFunc(object parameter)
         {
             if (RouteAktuell != null)
@@ -410,15 +425,6 @@ namespace EDRouter.ViewModel
                 CopyNextSystemToClipBoard();
             }
         }
-
-        private bool _FileBrowserExpanded = false;
-
-        public bool FileBrowserExpanded
-        {
-            get { return _FileBrowserExpanded; }
-            set { _FileBrowserExpanded = value; RPCEvent(nameof(FileBrowserExpanded)); }
-        }
-
 
         #endregion
 
@@ -630,8 +636,12 @@ namespace EDRouter.ViewModel
                     Schiff = LG.Ship;
                     Tank = LG.FuelCapacity;
 
-                    ResidualJumps();
+                    CalcRestsprünge();
 
+                    break;
+                case "Shutdown":
+                    //Nichts zu tun, nur anzeigen und speichern..
+                    SaveRouteFile();
                     break;
                 case "FuelScoop":
                     Model.Events.FuelScoopEvent FSE = (Model.Events.FuelScoopEvent)e.EventObject;
@@ -648,12 +658,13 @@ namespace EDRouter.ViewModel
                     //SerializeObjectToXML<Model.Events.FSDTargetEvent>(FSDT, Path.Combine(SettingsFolder, "FSDTarget.xml"));
                     SystemNächstes = FSDT.Name;
 
-                    ResidualJumps();
+                    CalcRestsprünge();
 
                     break;
                 case "FSDJump":
                     Model.Events.FSDJumpEvent FSDJ = (Model.Events.FSDJumpEvent)e.EventObject;
                     Debug.Print("Distanz:" + FSDJ.JumpDist + " System:" + FSDJ.StarSystem);
+                    FSDBoost = false;
                     //SerializeObjectToXML<Model.Events.FSDJumpEvent>(FSDJ, Path.Combine(SettingsFolder, "FSDJump.xml"));
                     SystemAktuell = FSDJ.StarSystem;
 
@@ -682,7 +693,7 @@ namespace EDRouter.ViewModel
                         }
                     }
 
-                    ResidualJumps();
+                    CalcRestsprünge();
 
                     break;
                 case "NavRoute":
@@ -703,7 +714,7 @@ namespace EDRouter.ViewModel
                         SystemNächstes = string.Empty;
                     }
 
-                    ResidualJumps();
+                    CalcRestsprünge();
 
                     break;
                 case "SupercruiseEntry":
@@ -721,6 +732,11 @@ namespace EDRouter.ViewModel
                     
                     Debug.Print("Jump-Typ:" + SJ.JumpType);
                     //SerializeObjectToXML<Model.Events.StartJumpEvent>(SJ, Path.Combine(SettingsFolder, "StartJump.xml"));
+                    break;
+                case "JetConeBoost":
+                    Model.Events.JetConeBoostEvent JCB = (Model.Events.JetConeBoostEvent)e.EventObject;
+                    FSDBoost = true;
+                    Debug.Print("BoostValue:" + JCB.BoostValue);
                     break;
                 case "Location":
                     Model.Events.LocationEvent Loc = (Model.Events.LocationEvent)e.EventObject;
@@ -751,12 +767,17 @@ namespace EDRouter.ViewModel
                         FuelReservoir = S.Fuel.FuelReservoir;
                     }
 
-
-
                     break;
                 case "Loadout":
                     LastLoadoutEvent = (Model.Events.LoadoutEvent)e.EventObject;
                     SerializeObjectToXML<Model.Events.LoadoutEvent>(LastLoadoutEvent, Path.Combine(Arbeitsverzeichnis, "Loadout.xml"));
+                    
+                    Debug.Print(LastLoadoutEvent.ModulesValue.ToString());
+
+                    FSDHealth = LastLoadoutEvent.Modules.FirstOrDefault(x => x.Slot == "FrameShiftDrive").Health;
+
+                    Debug.Print("### FSD-Health:" + FSDHealth);
+
                     break;
                 case "LaunchSRV":
                     Model.Events.LaunchSRVEvent LSRV = (Model.Events.LaunchSRVEvent)e.EventObject;
@@ -766,11 +787,25 @@ namespace EDRouter.ViewModel
                     Model.Events.DockSRVEvent DSRV = (Model.Events.DockSRVEvent)e.EventObject;
                     Debug.Print("DockSRV:" + DSRV.SRV);
                     break;
+                case "ModulesInfo":
+                    Model.Events.ModulesInfoEvent ModInfo = (Model.Events.ModulesInfoEvent)e.EventObject;
+                    Debug.Print("ModuleInfo:" + ModInfo.Modules.Count);
+                    break;
+                case "RepairAll":
+                    _FSDHealth = 1.0; RPCEvent(nameof(FSDHealth));
+                    break;
+                case "AfmuRepairs":
+                    Model.Events.AfmuRepairsEvent AfmuRepairs = (Model.Events.AfmuRepairsEvent)e.EventObject;
+                    if (AfmuRepairs.Module_Localised == "FSA")
+                    {
+                        _FSDHealth = AfmuRepairs.Health;
+                        RPCEvent(nameof(FSDHealth));
+                    }
+                    break;
                 default:
                     break;
             }
         }
-
 
         #region FileSystemWatcher..
 
@@ -865,7 +900,7 @@ namespace EDRouter.ViewModel
         private void OnError(object sender, ErrorEventArgs e) =>
             PrintException(e.GetException());
 
-        private void PrintException(Exception? ex)
+        private void PrintException(Exception ex)
         {
             if (ex != null)
             {
@@ -879,12 +914,21 @@ namespace EDRouter.ViewModel
 
         #endregion
 
-        private void ResidualJumps()
+        private void CalcRestsprünge()
         {
             if (RouteAktuell != null)
             {
                 Restsprünge = RouteAktuell.Where(x => x.besucht == false).Sum(x => x.Sprünge);
             }
+        }
+
+        private void CalcFuelPercent()
+        {
+            if (LastLoadoutEvent != null)
+            {
+                FuelPercent = " [" + ((100.00 / LastLoadoutEvent.FuelCapacity.Main) * FuelMain).ToString("0.0") + "%]";
+            }
+        
         }
 
         private void CopyNextSystemToClipBoard()
@@ -931,6 +975,7 @@ namespace EDRouter.ViewModel
                     if (i == 1)
                     {
                         E.besucht = true;
+                        E.TimeStamp = DateTime.Now;
                     }
 
                     RouteAktuell.Add(E);
@@ -992,6 +1037,7 @@ namespace EDRouter.ViewModel
                     if (i == 1)
                     {
                         E.besucht = true;
+                        E.TimeStamp = DateTime.Now;
                     }
 
                     RouteAktuell.Add(E);
@@ -1041,7 +1087,7 @@ namespace EDRouter.ViewModel
                         CopyNextSystemToClipBoard();
                     }
 
-                    ResidualJumps();
+                    CalcRestsprünge();
 
                 }
                 else
@@ -1068,14 +1114,17 @@ namespace EDRouter.ViewModel
 
         private void SerializeObjectToXML<T>(T item, string FilePath)
         {
-            XmlSerializer xs = new XmlSerializer(typeof(T));
+            //var task = Task.Run(() =>
+            //{
+                XmlSerializer xs = new XmlSerializer(typeof(T));
 
-            using (StreamWriter wr = new StreamWriter(FilePath))
-            {
-                xs.Serialize(wr, item);
-                wr.Flush();
-                wr.Close();
-            }
+                using (StreamWriter wr = new StreamWriter(FilePath))
+                {
+                    xs.Serialize(wr, item);
+                    wr.Flush();
+                    wr.Close();
+                }
+            //});
         }
 
         private T DeserializeObjectFromXML<T>(string FilePath)
