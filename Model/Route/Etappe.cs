@@ -121,6 +121,10 @@ namespace EDRouter.Model.Route
                 case Model.Route.ReiseRoute.RouteType.TR:
                     break;
                 case Model.Route.ReiseRoute.RouteType.RR:
+                    System = RawValues[0];
+                    Entfernung = (float)Math.Round(Convert.ToSingle(RawValues[4].Replace('.', ',')), 2);
+                    Sprünge = Convert.ToInt32(RawValues[7]);
+                    Info = RawValues[1].Replace(RawValues[0], string.Empty) + " - " + RawValues[2];
                     break;
                 case Model.Route.ReiseRoute.RouteType.GY:
                     break;

@@ -38,9 +38,6 @@ namespace EDRouter.Model.Events
         public long Spent_On_Premium_Stock { get; set; }
         public int Premium_Stock_Bought { get; set; }
 
-
-
-
     }
 
     [Serializable]
@@ -75,13 +72,5 @@ namespace EDRouter.Model.Events
         public long Settlement_Conquered { get; set; }
         public long OnFoot_Skimmers_Killed { get; set; }
         public long OnFoot_Scavs_Killed { get; set; }
-
-
-
-
-
-
     }
-
-
 }

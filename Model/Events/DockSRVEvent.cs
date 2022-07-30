@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace EDRouter.Model.Events
 {
-    class DockSRVEvent : EventBase
+    [Serializable]
+    public class DockSRVEvent : EventBase
     {
         //"DockSRV", "SRVType":"testbuggy", "SRVType_Localised":"SRV Scarab", "ID":363 
 

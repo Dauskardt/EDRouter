@@ -168,7 +168,7 @@
                               CanUserReorderColumns="False" Loaded="DataGrid_Loaded"
                               VerticalAlignment="Stretch"
                               HorizontalAlignment="Stretch"
-                              x:Name="DGVRoute">
+                              x:Name="DGVRoute" GridLinesVisibility="All">
                     <DataGrid.RowStyle>
                         <Style TargetType="{x:Type DataGridRow}">
                             <Setter Property="Background" Value="{StaticResource BackgroundBrush}"/>

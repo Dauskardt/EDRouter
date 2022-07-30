@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 namespace EDRouter.Model.Events
 {
     [Serializable]
-    public class ShutdownEvent : EventBase
+    public class MusicEvent:EventBase
     {
-        //{ "timestamp":"2022-07-25T06:51:22Z", "event":"Shutdown" }
 
-        public ShutdownEvent()
+        public MusicEvent()
         {
-            this.Event = "Shutdown";
+            this.Event = "Music";
         }
+
+        public string MusicTrack { get; set; }
     }
 }

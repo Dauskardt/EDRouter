@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace EDRouter.Model.Events
 {
+    [Serializable]
     public class SupercruiseExitEvent:EventBase
     {
 

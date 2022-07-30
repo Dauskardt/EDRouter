@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace EDRouter.Model.Events
 {
-    class LaunchSRVEvent : EventBase
+    [Serializable]
+    public class LaunchSRVEvent : EventBase
     {
         //"LaunchSRV", "SRVType":"testbuggy", "SRVType_Localised":"SRV Scarab", "Loadout":"starter", "ID":363, "PlayerControlled":true }
 

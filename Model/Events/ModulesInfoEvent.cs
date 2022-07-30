@@ -17,6 +17,7 @@ namespace EDRouter.Model.Events
         }
     }
 
+    [Serializable]
     public class ModuleObject
     { 
         //"Slot":"MainEngines", "Item":"int_engine_size6_class5", "Power":8.467200, "Priority":0

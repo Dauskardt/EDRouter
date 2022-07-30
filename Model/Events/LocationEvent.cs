@@ -8,6 +8,7 @@ using System.Windows.Media.Media3D;
 
 namespace EDRouter.Model.Events
 {
+    [Serializable]
     public class LocationEvent:EventBase
     {
         public double DistFromStarLS { get; set; }

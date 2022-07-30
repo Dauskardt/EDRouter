@@ -411,6 +411,8 @@
         <Setter Property="RowHeaderWidth" Value="0"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="BorderBrush" Value="Black"/>
+        <Setter Property="HorizontalGridLinesBrush" Value="Yellow"/>
+        <Setter Property="VerticalGridLinesBrush" Value="Yellow"/>
         <!--<Setter Property="ColumnHeaderStyle" Value="{DynamicResource DataGridColumnHeaderStyleMod}"/>-->
 
     </Style>

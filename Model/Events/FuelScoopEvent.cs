@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace EDRouter.Model.Events
 {
+    [Serializable]
     public class FuelScoopEvent:EventBase
     {
         //{ "timestamp":"2021-12-25T09:06:30Z", "event":"FuelScoop", "Scooped":0.015121, "Total":16.000000 }

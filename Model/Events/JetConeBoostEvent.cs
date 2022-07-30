@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace EDRouter.Model.Events
 {
-   public class JetConeBoostEvent : EventBase
+    [Serializable]
+    public class JetConeBoostEvent : EventBase
    {
         //{ "timestamp":"2022-07-27T06:21:02Z", "event":"JetConeBoost", "BoostValue":4.000000 }
 

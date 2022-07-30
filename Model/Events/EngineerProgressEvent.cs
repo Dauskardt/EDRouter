@@ -23,6 +23,7 @@ namespace EDRouter.Model.Events
         */
     }
 
+    [Serializable]
     public class EngineerObject: IComparable<EngineerObject>
     {
         public string Engineer { get; set; }

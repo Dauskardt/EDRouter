@@ -47,6 +47,7 @@ namespace EDRouter.Model.Events
         }
     }
 
+    [Serializable]
     public class MaterialHorizonsBase
     { 
         public string Name { get; set; }

@@ -8,6 +8,7 @@
     <Description>Automatisierung von Spansh Routendateien im Spiel Elite Dangerous</Description>
     <Copyright>Sh4DOWM4K3R</Copyright>
     <PackageProjectUrl>http://www.errorbit.de/category/downloads/</PackageProjectUrl>
+    <Version>0.2.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
