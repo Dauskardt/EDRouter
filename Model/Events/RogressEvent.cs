@@ -7,12 +7,11 @@ using System.Threading.Tasks;
 namespace EDRouter.Model.Events
 {
     [Serializable]
-    public class ProgressEvent:RankEvent
+    public class ProgressEvent : RankEvent
     {
         public ProgressEvent()
         {
-            this.Event = "Progress";
-        
+            Event = "Progress";
         }
     }
 }

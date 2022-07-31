@@ -25,12 +25,6 @@ namespace EDRouter.View
             InitializeComponent();
         }
 
-        private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
-        {
-            DataGridRow row = sender as DataGridRow;
-            // Some operations with this row
-        }
-
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             ViewModel.ViewModelMain VMM = (ViewModel.ViewModelMain)this.DataContext;
@@ -40,27 +34,6 @@ namespace EDRouter.View
                 VMM.ACLoadRouteFileFunc(VMM.SelectedRoutenFile.FullName);
                 VMM.SaveSettings();
             }
-
-        }
-
-        private void DataGrid_AutoGeneratingColumn(object sender, DataGridAutoGeneratingColumnEventArgs e)
-        {
-            switch (e.Column.Header)
-            {
-                case "System":
-                case "NS":
-                case "Sprünge":
-                case "Entfernung":
-                case "Rest":
-                case "besucht":
-                case "TimeStamp":
-                case "Info":
-                    e.Column.IsReadOnly = true;
-                    break;
-                default:
-                    break;
-            }
-
 
         }
 

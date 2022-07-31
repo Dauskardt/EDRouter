@@ -12,7 +12,7 @@ namespace EDRouter.Model.Json
     public class JournalEvents:Model.ModelBase
     {
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private ObservableCollection<Model.Events.EventBase> _Events = new();
+        private ObservableCollection<Model.Events.EventBase> _Events = new ObservableCollection<Model.Events.EventBase>();
         public ObservableCollection<Model.Events.EventBase> Events
         {
             get { return _Events; }

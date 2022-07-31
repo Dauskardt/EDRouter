@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
     <Authors>Sh4DOWM4K3R</Authors>
     <Description>Automatisierung von Spansh Routendateien im Spiel Elite Dangerous</Description>

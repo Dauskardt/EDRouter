@@ -54,7 +54,7 @@ namespace EDRouter.Model.Events
         { 
             get 
             {
-                List<Model.Material.MaterialOdyssey> AllItems = new();
+                List<Model.Material.MaterialOdyssey> AllItems = new List<Model.Material.MaterialOdyssey>();
                 AllItems.AddRange(Items);
                 AllItems.AddRange(Components);
                 AllItems.AddRange(Consumables);

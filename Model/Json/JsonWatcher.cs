@@ -42,7 +42,6 @@ namespace EDRouter.Model.Json
             set { _StatusMeldung = value; RPCEvent(nameof(StatusMeldung)); }
         }
 
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string _JournalFolder;
         public string JournalFolder
@@ -50,10 +49,7 @@ namespace EDRouter.Model.Json
             get { return _JournalFolder; }
         }
 
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private DateTime LastEDLogTime { get; set; }
-
         private string _Commander;
         public string CommanderProperty
         {
@@ -67,13 +63,7 @@ namespace EDRouter.Model.Json
             }
         }
 
-        //[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        //private string _ActualLogFile;
-        //public string ActualLogFile
-        //{
-        //    get { return _ActualLogFile; }
-        //}
-
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private Model.Events.NavRouteEvent _NaveRoute;
         public Model.Events.NavRouteEvent NaveRoute
         {
@@ -81,6 +71,7 @@ namespace EDRouter.Model.Json
             set { _NaveRoute = value; RPCEvent(nameof(NaveRoute)); }
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private Model.Events.StatusEvent _Status;
         public Model.Events.StatusEvent Status
         {
@@ -88,6 +79,7 @@ namespace EDRouter.Model.Json
             set { _Status = value; RPCEvent(nameof(Status)); }
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private Model.Events.ModulesInfoEvent _Module;
         public Model.Events.ModulesInfoEvent Module
         {
@@ -95,10 +87,13 @@ namespace EDRouter.Model.Json
             set { _Module = value; RPCEvent(nameof(Module)); }
         }
 
-        private DateTime TimeStampMax = DateTime.Now;
-
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private DateTime LastNavRouteTimeStamp = new DateTime(1, 1, 1);
         private DateTime LastStatusTimeStamp = new DateTime(1, 1, 1);
+
+        private DateTime TimeStampMax { get; set; } = DateTime.Now;
+
+        private DateTime LastEDLogTime { get; set; }
 
         private void GetStatusJson(string path)
         {
@@ -200,6 +195,7 @@ namespace EDRouter.Model.Json
                         {
                             string line;
                             int Index = 0;
+
                             Events.EventBase EventTest = new Events.EventBase();
 
                             while ((line = sr.ReadLine()) != null)
@@ -484,6 +480,7 @@ namespace EDRouter.Model.Json
            JournalFiles.Sort((a, b) => b.CompareTo(a));
            return JournalFiles[0];
         }
+
 
         public JsonWatcher(string JournalFolderPath) 
         {

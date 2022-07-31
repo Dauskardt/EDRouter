@@ -163,7 +163,6 @@
                               SelectionUnit="FullRow" 
                               IsReadOnly="True" 
                               SelectedItem="{Binding SelectedEtappe,Mode=TwoWay}" 
-                              AutoGeneratingColumn="DataGrid_AutoGeneratingColumn" 
                               CanUserSortColumns="False" 
                               CanUserReorderColumns="False" Loaded="DataGrid_Loaded"
                               VerticalAlignment="Stretch"

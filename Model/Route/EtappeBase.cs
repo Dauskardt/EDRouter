@@ -18,7 +18,7 @@ namespace EDRouter.Model.Route
         {
             if (PropertyChanged != null)
             {
-                PropertyChangedEventArgs e = new(propertyName);
+                PropertyChangedEventArgs e = new PropertyChangedEventArgs(propertyName);
                 PropertyChanged(this, e);
             }
         }

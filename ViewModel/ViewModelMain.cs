@@ -18,7 +18,7 @@ namespace EDRouter.ViewModel
         #region Declarations..
 
         public static string Titel { get { return System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + " Version " +
-                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version + " .NET 5" + 
+                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version + " .NET Core 3.1" + 
                     " [SH4DOWM4K3R " + DateTime.Now.Year + "]"; } }
 
         public string Arbeitsverzeichnis { get { return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).ToString() + "\\EDRouter"; } }
@@ -118,7 +118,6 @@ namespace EDRouter.ViewModel
             set { _FuelPercent = value; RPCEvent(nameof(FuelPercent)); }
         }
 
-
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private double _FuelReservoir = 0.0;
         public double FuelReservoir
@@ -181,7 +180,6 @@ namespace EDRouter.ViewModel
                 Debug.Print("### FSD-HEALTH:" + FSDHealth);
             }
         }
-
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private string _LastAPIMessage;
@@ -586,6 +584,9 @@ namespace EDRouter.ViewModel
                 if (File.Exists(LoadoutPath))
                 {
                     LastLoadoutEvent = DeserializeObjectFromXML<Model.Events.LoadoutEvent>(LoadoutPath);
+
+                    FSDHealth = LastLoadoutEvent.Modules.FirstOrDefault(x => x.Slot == "FrameShiftDrive").Health;
+
                 }
 
                 EventWatcher.EventRaised += EventWatcher_EventRaised;
@@ -737,6 +738,9 @@ namespace EDRouter.ViewModel
                 case "JetConeBoost":
                     Model.Events.JetConeBoostEvent JCB = (Model.Events.JetConeBoostEvent)e.EventObject;
                     FSDBoost = true;
+                    //LastLoadoutEvent.Modules.FirstOrDefault(x => x.Slot == "FrameShiftDrive").Health = FSDHealth;
+                    //SerializeObjectToXML<Model.Events.LoadoutEvent>(LastLoadoutEvent, Path.Combine(Arbeitsverzeichnis, "Loadout.xml"));
+
                     Debug.Print("BoostValue:" + JCB.BoostValue);
                     break;
                 case "Location":
