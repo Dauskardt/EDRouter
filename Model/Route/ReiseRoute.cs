@@ -9,7 +9,7 @@ using System.Xml.Serialization;
 namespace EDRouter.Model.Route
 {
     [Serializable][XmlRoot("ReiseRoute")]
-    public class ReiseRoute:ObservableCollection<Etappe>
+    public class ReiseRoute:List<Etappe>
     {
 
         public enum RouteType { NR, FC, TO, TR, RR, GY, EL, AM }

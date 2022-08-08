@@ -25,7 +25,7 @@
         <SolidColorBrush x:Key="GroupBoxHeaderColor" Color="#FFD3CF25"/>
         <Converters:InvertableBooleanToVisibilityConverter x:Key="_Converter"/>
     </Window.Resources>
-    <Grid Margin="10">
+    <Grid Margin="10" IsEnabled="{Binding UserInitComplete}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300"/>
             <ColumnDefinition Width="5"/>
@@ -33,6 +33,7 @@
             <ColumnDefinition Width="25"/>
             <!--<ColumnDefinition Width="Auto"/>-->
         </Grid.ColumnDefinitions>
+        
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="290"/>
@@ -41,7 +42,11 @@
             </Grid.RowDefinitions>
             <GroupBox Grid.Row="0">
                 <GroupBox.Header>
-                    <TextBlock Text="Schiffstatus" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                    <TextBlock Text="Schiffstatus" Foreground="{StaticResource GroupBoxHeaderColor}">
+                        <TextBlock.Effect>
+                            <DropShadowEffect ShadowDepth="3"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
                 </GroupBox.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                     <Grid>
@@ -97,7 +102,11 @@
             </GroupBox>
             <GroupBox Grid.Row="1">
                 <GroupBox.Header>
-                    <TextBlock Text="Etappe (Galmap)" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                    <TextBlock Text="Etappe (Galmap)" Foreground="{StaticResource GroupBoxHeaderColor}">
+                        <TextBlock.Effect>
+                            <DropShadowEffect ShadowDepth="3"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
                 </GroupBox.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
                     <Grid>
@@ -118,7 +127,7 @@
                         <TextBlock Grid.Column="0" Grid.Row="1" Text="Sprünge:" Margin="5"/>
                         <TextBlock Grid.Column="1" Grid.Row="1" Text="{Binding Jumps}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
                         <TextBlock Grid.Column="0" Grid.Row="2" Text="Standort" Margin="5"/>
-                        <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding SystemAktuell}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
+                        <TextBlock Grid.Column="1" Grid.Row="2" Text="{Binding SystemAktuell}" Margin="5" Foreground="{StaticResource TextValueColor}" MouseDown="TextBlock_MouseDown"/>
                         <TextBlock Grid.Column="0" Grid.Row="3" Text="Nächster Sprung" Margin="5"/>
                         <TextBlock Grid.Column="1" Grid.Row="3" Text="{Binding SystemNächstes}" Margin="5" Foreground="{StaticResource TextValueColor}"/>
                         <TextBlock Grid.Column="0" Grid.Row="4" Text="Restsprünge" Margin="5"/>
@@ -128,7 +137,11 @@
             </GroupBox>
             <GroupBox Grid.Row="2">
                 <GroupBox.Header>
-                    <TextBlock Text="Journal-API" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                    <TextBlock Text="Journal-API" Foreground="{StaticResource GroupBoxHeaderColor}">
+                        <TextBlock.Effect>
+                            <DropShadowEffect ShadowDepth="3"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
                 </GroupBox.Header>
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -139,17 +152,26 @@
                         <RowDefinition Height="35"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Column="0" Grid.Row="0" Text="Event" Margin="5" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Grid.Row="0" Text="{Binding LastAPIMessage}" Margin="5" Foreground="{StaticResource TextValueColor}" VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding LastAPIMessage}" Margin="5" Foreground="{StaticResource TextValueColor}" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding LastAPIIndex}" Margin="5" Foreground="#FF646464" VerticalAlignment="Center"/>
+                    </StackPanel>
+                   
                 </Grid>
             </GroupBox>
         </Grid>
         <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch"/>
+        
         <Grid Grid.Column="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" Height="Auto">
             <GroupBox HorizontalAlignment="Stretch"  Visibility="{Binding FileBrowserExpanded, Converter={StaticResource InvertableBooleanToVisibilityConverter}, ConverterParameter=Inverted}">
             <GroupBox.Header>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Grid.Column="0" Text="Geplante Route" Foreground="{StaticResource GroupBoxHeaderColor}"/>
-                    <TextBlock Margin="10,0,0,0" Text="{Binding AktuelleRouteName}" Foreground="{StaticResource TextValueColor}"/>
+                        <TextBlock Grid.Column="0" Text="Geplante Route" Foreground="{StaticResource GroupBoxHeaderColor}">
+                            <TextBlock.Effect>
+                                <DropShadowEffect ShadowDepth="3"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                        <TextBlock Margin="10,0,0,0" Text="{Binding AktuelleRouteName}" Foreground="{StaticResource TextValueColor}"/>
                 </StackPanel>
             </GroupBox.Header>
                 <Grid>
@@ -197,20 +219,24 @@
                         <ColumnDefinition Width="50"/>
                         <ColumnDefinition Width="50"/>
                         <ColumnDefinition Width="50"/>
-                    </Grid.ColumnDefinitions>
-                    <Button Grid.Column="0"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACRoutePlanen}" Cursor="Hand" Margin="2" >
+                        <ColumnDefinition Width="50"/>
+                        </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACRoutePlanen}" Cursor="Hand" Margin="2" ToolTip="Spansh Webseite aufrufen und eine Route planen">
                         <TextBlock Text="Route planen" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
-                    <Button Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACCopy}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}">
+                        <Button Grid.Column="1" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACEject}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}" ToolTip="Aktuell gelandene Route entladen">
+                            <TextBlock Text="Eject" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+                        <Button Grid.Column="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACCopy}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}" ToolTip="Aktuellen Wegpunkt in die Zwischenablage kopieren">
                         <TextBlock Text="Copy" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
-                    <Button Grid.Column="2" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACSetNext}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}">
+                        <Button Grid.Column="3" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACSetNext}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}" ToolTip="Den nächsten Wegpunkt überspringen">
                         <TextBlock Text="+" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
-                    <Button Grid.Column="3" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACSetPrevious}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}">
+                        <Button Grid.Column="4" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACSetPrevious}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}" ToolTip="Auf vorherigen Wegpunkt zurücksetzen">
                         <TextBlock Text="-" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
-                    <Button Grid.Column="4"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACRouteReset}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}">
+                        <Button Grid.Column="5"  HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding ACRouteReset}" Cursor="Hand" Margin="2" IsEnabled="{Binding RouteAktuell.Count}" ToolTip="Alle Wegpunkte der aktuellen Route zurücksetzen">
                         <TextBlock Text="Reset" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
                 </Grid>
@@ -218,7 +244,11 @@
             </GroupBox>
             <GroupBox  DockPanel.Dock="Top" HorizontalAlignment="Stretch" Visibility="{Binding FileBrowserExpanded, Converter={StaticResource InvertableBooleanToVisibilityConverter}, ConverterParameter=Normal}">
                 <GroupBox.Header>
-                    <TextBlock Grid.Column="0" Text="Dateimanager" Foreground="{StaticResource GroupBoxHeaderColor}"/>
+                    <TextBlock Grid.Column="0" Text="Dateimanager" Foreground="{StaticResource GroupBoxHeaderColor}">
+                        <TextBlock.Effect>
+                            <DropShadowEffect ShadowDepth="3"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
                 </GroupBox.Header>
                 <Grid>
                     <Grid.RowDefinitions>
@@ -244,21 +274,21 @@
                         </DataGrid.Columns>
                     </DataGrid>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Cursor="Hand" Margin="2" Width="40" Command="{Binding ACRouteFolder}">
+                        <Button Cursor="Hand" Margin="2" Width="40" Command="{Binding ACRouteFolder}"  ToolTip="Ordner mit Routendateien im Explorer öffnen">
                             <Image Source="/Resources/folder_magnify.png" Stretch="None"/>
                         </Button>
-                        <Button Cursor="Hand" Margin="2" Width="100" Command="{Binding ACDeleteRoutenFile}" CommandParameter="{Binding SelectedRoutenFile.FullName}">
+                        <Button Cursor="Hand" Margin="2" Width="100" Command="{Binding ACDeleteRoutenFile}" CommandParameter="{Binding SelectedRoutenFile.FullName}" ToolTip="Ausgewählte Route löschen">
                             <TextBlock Text="Löschen" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
-                        <Button Cursor="Hand" Margin="2" Width="100" Command="{Binding ACLoadFile}" CommandParameter="{Binding SelectedRoutenFile.FullName}">
+                        <Button Cursor="Hand" Margin="2" Width="100" Command="{Binding ACLoadFile}" CommandParameter="{Binding SelectedRoutenFile.FullName}" ToolTip="Ausgewählte Route laden">
                             <TextBlock Text="Laden" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
-
                     </StackPanel>
                 </Grid>
             </GroupBox>
         </Grid>
-        <ToggleButton Grid.Column="3" IsChecked="{Binding FileBrowserExpanded}" Width="25" HorizontalContentAlignment="Center" VerticalContentAlignment="Top">
+        <TextBlock Grid.Column="2" Text="Bitte Spiel starten.." FontSize="60" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding UserInitComplete, Converter={StaticResource InvertableBooleanToVisibilityConverter}, ConverterParameter=Inverted}"/>
+        <ToggleButton Grid.Column="3" IsChecked="{Binding FileBrowserExpanded}" Width="25" HorizontalContentAlignment="Center" VerticalContentAlignment="Top" ToolTip="Dateimanager öffnen/schliessen">
             <ToggleButton.Style>
                 <Style TargetType="{x:Type ToggleButton}">
                     <Setter Property="Template">
@@ -276,6 +306,11 @@
                     <Setter Property="BorderThickness" Value="0"/>
                     <Setter Property="Content" Value=">"/>
                     <Style.Triggers>
+                        <Trigger Property="IsMouseOver" Value="true">
+                            <Setter Property="Background" Value="{StaticResource ControlMouseOverBackground}"/>
+                            <!--<Setter Property="Background" Value="#FF50A4FA"/>-->
+                            <!--<Setter Property="BorderBrush" TargetName="border" Value="{StaticResource ControlMouseOverBorderBrush}"/>-->
+                        </Trigger>
                         <Trigger Property="IsChecked" Value="True">
                             <Setter Property="Content" Value="►"/>
                             <!--<Setter Property="Foreground" Value="Red"/>-->

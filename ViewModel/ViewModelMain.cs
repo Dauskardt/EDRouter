@@ -23,10 +23,19 @@ namespace EDRouter.ViewModel
 
         public string Arbeitsverzeichnis { get { return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).ToString() + "\\EDRouter"; } }
 
+        private string UserArbeitsverzeichnis { get; set; }
+
+        private bool _UserInitComplete = false;
+        public bool UserInitComplete 
+        {
+            get { return _UserInitComplete; }
+            set { _UserInitComplete = value; RPCEvent(nameof(UserInitComplete)); }
+        
+        }
+
         public string PathToExe { get { return System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\EDRouter.exe"; } }
 
         private static string JournalDirectory { get { return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile).ToString() + "\\Saved Games\\Frontier Developments\\Elite Dangerous"; } }
-
 
         private static string DownloadFolder { get { return Environment.GetEnvironmentVariable("USERPROFILE") + @"\" + "Downloads"; } }
 
@@ -190,6 +199,16 @@ namespace EDRouter.ViewModel
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        private int _LastAPIIndex;
+        public int LastAPIIndex
+        {
+            get { return _LastAPIIndex; }
+            set { _LastAPIIndex = value; RPCEvent(nameof(LastAPIIndex)); }
+
+        }
+
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         private List<Model.Events.Part> _Route;
         public List<Model.Events.Part> Route
         {
@@ -217,7 +236,7 @@ namespace EDRouter.ViewModel
         }
 
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-        private Model.Route.ReiseRoute _RouteAktuell = new Model.Route.ReiseRoute();
+        private Model.Route.ReiseRoute _RouteAktuell;
         public Model.Route.ReiseRoute RouteAktuell
         {
             get { return _RouteAktuell; }
@@ -310,7 +329,7 @@ namespace EDRouter.ViewModel
         }
         public void ACRouteFolderFunc(object parameter)
         {
-            string RouteDir = Path.Combine(Arbeitsverzeichnis, "Routen");
+            string RouteDir = Path.Combine(UserArbeitsverzeichnis, "Routen");
 
             if (Directory.Exists(RouteDir))
             {
@@ -424,6 +443,23 @@ namespace EDRouter.ViewModel
             }
         }
 
+        public ActionCommand ACEject
+        {
+            get;
+            set;
+        }
+        public void ACEjectFunc(object parameter)
+        {
+            if (MessageBox.Show("Aktuelle Route auswerfen?", "Benutzerabfrage", MessageBoxButton.YesNo, MessageBoxImage.Asterisk) == MessageBoxResult.Yes)
+            {
+                RouteAktuell = null;
+                Route = null;
+                AktuelleRoutePath = string.Empty;
+                ProgramSettings.LastRoute = string.Empty;
+                SaveSettings();
+            }
+        }
+
         #endregion
 
         public ViewModelMain()
@@ -498,44 +534,63 @@ namespace EDRouter.ViewModel
                 ExecuteFunc = ACRouteFolderFunc
             };
 
-
-
-            if (!Directory.Exists(Arbeitsverzeichnis))
+            ACEject= new ActionCommand
             {
-                Directory.CreateDirectory(Arbeitsverzeichnis);
+                CanExecuteFunc = obj => true,
+                ExecuteFunc = ACEjectFunc
+            };
+
+            InitJsonWatcher();
+        }
+
+        private bool InitUserDirectory(string FID)
+        {
+            try
+            {
+                UserArbeitsverzeichnis = Path.Combine(Arbeitsverzeichnis, FID);
+
+                if (!Directory.Exists(UserArbeitsverzeichnis))
+                {
+                    Directory.CreateDirectory(UserArbeitsverzeichnis);
+                }
+
+                if (!Directory.Exists(Path.Combine(UserArbeitsverzeichnis, "Routen")))
+                {
+                    Directory.CreateDirectory(Path.Combine(UserArbeitsverzeichnis, "Routen"));
+                }
+
+                if (File.Exists(System.IO.Path.Combine(UserArbeitsverzeichnis, "EDRouterSettings.xml")))
+                {
+                    LoadSettings();
+                }
+                else
+                {
+                    ProgramSettings = new Model.Settings();
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Initialisierungsfehler" + Environment.NewLine + ex.Message, "Programmfehler", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
-            if (!Directory.Exists(Path.Combine(Arbeitsverzeichnis, "Routen")))
-            {
-                Directory.CreateDirectory(Path.Combine(Arbeitsverzeichnis, "Routen"));
-            }
+            return false;
 
-            if (File.Exists(System.IO.Path.Combine(Arbeitsverzeichnis, "EDRouterSettings.xml")))
-            {
-                LoadSettings();
-            }
-            else
-            {
-                ProgramSettings = new Model.Settings();
-            }
-
-            InitGameFiles();
-
-            GetRoutenDateien();
         }
 
         private void LoadSettings()
         {
-            if (!Directory.Exists(Arbeitsverzeichnis))
+            if (!Directory.Exists(UserArbeitsverzeichnis))
             {
-                Directory.CreateDirectory(Arbeitsverzeichnis);
+                Directory.CreateDirectory(UserArbeitsverzeichnis);
             }
 
-            if (File.Exists(System.IO.Path.Combine(Arbeitsverzeichnis, "EDRouterSettings.xml")))
+            if (File.Exists(System.IO.Path.Combine(UserArbeitsverzeichnis, "EDRouterSettings.xml")))
             {
                 try
                 {
-                    ProgramSettings = DeserializeObjectFromXML<Model.Settings>(System.IO.Path.Combine(Arbeitsverzeichnis, "EDRouterSettings.xml"));
+                    ProgramSettings = DeserializeObjectFromXML<Model.Settings>(System.IO.Path.Combine(UserArbeitsverzeichnis, "EDRouterSettings.xml"));
 
                     if (!string.IsNullOrEmpty(ProgramSettings.LastRoute))
                     {
@@ -557,29 +612,41 @@ namespace EDRouter.ViewModel
 
         public void SaveSettings()
         {
-            ProgramSettings.LastRoute = AktuelleRoutePath;
+            if (!string.IsNullOrEmpty(UserArbeitsverzeichnis))
+            {
+                if (Directory.Exists(UserArbeitsverzeichnis))
+                {
+                    if (ProgramSettings != null)
+                    {
+                        ProgramSettings.LastRoute = AktuelleRoutePath;
+                        SerializeObjectToXML<Model.Settings>(ProgramSettings, System.IO.Path.Combine(UserArbeitsverzeichnis, "EDRouterSettings.xml"));
+                    }
+                }
+            }
+        }
 
-            SerializeObjectToXML<Model.Settings>(ProgramSettings, System.IO.Path.Combine(Arbeitsverzeichnis, "EDRouterSettings.xml"));
+        private void InitJsonWatcher()
+        {
+            EventWatcher = new Model.Json.JsonWatcher(JournalDirectory);
+            EventWatcher.EventRaised += EventWatcher_EventRaised;
+
+            string LastJournalFilePath = EventWatcher.GetLastJournalFile(JournalDirectory);
+
+            //EventWatcher.GetAllJsonLines(LastJournalFilePath);
         }
 
         private void InitGameFiles()
         {
-            if (Directory.Exists(Arbeitsverzeichnis))
+            if (Directory.Exists(UserArbeitsverzeichnis))
             {
-                EventWatcher = new Model.Json.JsonWatcher(JournalDirectory);
-
-                string LastJournalFilePath = EventWatcher.GetLastJournalFile(JournalDirectory);
-
-                EventWatcher.GetAllJsonLines(LastJournalFilePath);
-
-                string LoadGamePath = Path.Combine(Arbeitsverzeichnis, "LoadGame.xml");
+                string LoadGamePath = Path.Combine(UserArbeitsverzeichnis, "LoadGame.xml");
 
                 if (File.Exists(LoadGamePath))
                 {
                     LastLoadGameEvent = DeserializeObjectFromXML<Model.Events.LoadGameEvent>(LoadGamePath);
                 }
 
-                string LoadoutPath = Path.Combine(Arbeitsverzeichnis, "Loadout.xml");
+                string LoadoutPath = Path.Combine(UserArbeitsverzeichnis, "Loadout.xml");
 
                 if (File.Exists(LoadoutPath))
                 {
@@ -588,8 +655,6 @@ namespace EDRouter.ViewModel
                     FSDHealth = LastLoadoutEvent.Modules.FirstOrDefault(x => x.Slot == "FrameShiftDrive").Health;
 
                 }
-
-                EventWatcher.EventRaised += EventWatcher_EventRaised;
             }
         }
 
@@ -597,7 +662,7 @@ namespace EDRouter.ViewModel
         {
             this.Dispatcher.Invoke((Action)(() =>
             {
-                DirectoryInfo DInfo = new DirectoryInfo(Path.Combine(Arbeitsverzeichnis, "Routen"));
+                DirectoryInfo DInfo = new DirectoryInfo(Path.Combine(UserArbeitsverzeichnis, "Routen"));
 
                 FileInfo[] RoutenFiles = DInfo.GetFiles("*.xml");
 
@@ -617,270 +682,304 @@ namespace EDRouter.ViewModel
             }));
         }
 
-        private void EventWatcher_EventRaised(object sender, Model.Json.EventRaisedEventArgs e)
+        private void EventWatcher_EventRaised(object sender, Model.Events.EventRaisedEventArgs e)
         {
-            //Event ViewModel: StartJump
-            //Jump - Typ:Supercruise
-            //Event ViewModel: SupercruiseEntry
 
             Debug.Print("Event ViewModel: " + e.EventName);
 
             if (e.EventName != "Status" && e.EventName != "Music")
             {
-                LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " " + e.EventName;
+                Model.Events.EventBase EventTest = (Model.Events.EventBase)e.EventObject;
+                LastAPIMessage = EventTest.timestamp.ToString("HH:mm:ss") + " " + e.EventName;
+                //File.AppendAllText(Path.Combine(Arbeitsverzeichnis,"APILOG.txt"),LastAPIMessage + Environment.NewLine);
+
+                LastAPIIndex = e.Line;
             }
 
-            switch (e.EventName)
+            if (e.EventName == "LoadGame")
             {
-                case "LoadGame":
-                    Model.Events.LoadGameEvent LG = (Model.Events.LoadGameEvent)e.EventObject;
-                    Debug.Print("Commander:" + LG.Commander + " Ship:" + LG.Ship_Localised);
-                    SerializeObjectToXML<Model.Events.LoadGameEvent>(LG, Path.Combine(Arbeitsverzeichnis, "LoadGame.xml"));
+                Model.Events.LoadGameEvent LG = (Model.Events.LoadGameEvent)e.EventObject;
+                Debug.Print("Commander:" + LG.Commander + " Ship:" + LG.Ship_Localised);
+
+                if (LastLoadGameEvent == null)// && LG.timestamp > LastLoadGameEvent.timestamp)
+                {
                     LastLoadGameEvent = LG;
                     Schiff = LG.Ship;
                     Tank = LG.FuelCapacity;
 
-                    CalcRestsprünge();
-
-                    break;
-                case "Shutdown":
-                    //Nichts zu tun, nur anzeigen und speichern..
-                    SaveRouteFile();
-                    break;
-                case "FuelScoop":
-                    Model.Events.FuelScoopEvent FSE = (Model.Events.FuelScoopEvent)e.EventObject;
-                    Debug.Print("Total:" + FSE.Total + " Scooped:" + FSE.Scooped);
-                    break;
-                case "ReservoirReplenished":
-                    //Model.Events.ReservoirReplenishedEvent RRP = (Model.Events.ReservoirReplenishedEvent)e.EventObject;
-                    break;
-                case "FSDTarget":
-                    Model.Events.FSDTargetEvent FSDT = (Model.Events.FSDTargetEvent)e.EventObject;
-                    Debug.Print("System:" + FSDT.Name + " Star-Class:" + FSDT.StarClass + " Jumps:" + FSDT.RemainingJumpsInRoute);
-                    Jumps = FSDT.RemainingJumpsInRoute;
-
-                    SystemNächstes = FSDT.Name;
-
-                    CalcRestsprünge();
-
-                    break;
-                case "FSDJump":
-                    Model.Events.FSDJumpEvent FSDJ = (Model.Events.FSDJumpEvent)e.EventObject;
-                    Debug.Print("Distanz:" + FSDJ.JumpDist + " System:" + FSDJ.StarSystem);
-                    FSDBoost = false;
-
-                    SystemAktuell = FSDJ.StarSystem;
-
-                    if (Route != null)
+                    if (InitUserDirectory(LG.FID))
                     {
-                        Model.Events.Part Sys = Route.Find(x => x.StarSystem == SystemAktuell);
-                        
-                        int Pos = Route.IndexOf(Sys);
-                        
-                        if (Pos != -1)
-                        {
-                            Jumps = (Route.Count - 1) - Pos;
-                        }
+                        SerializeObjectToXML<Model.Events.LoadGameEvent>(LG, Path.Combine(UserArbeitsverzeichnis, "LoadGame.xml"));
 
-                    }
+                        InitGameFiles();
 
-                    if (RouteAktuell != null)
-                    {
-                        if (RouteAktuell.SetEtappeBesucht(SystemAktuell))
-                        {
-                            SaveRouteFile();
+                        GetRoutenDateien();
 
-                            RPCEvent(nameof(RouteAktuell));
+                        CalcRestsprünge();
 
-                            CopyNextSystemToClipBoard();
-                        }
-                    }
+                        UserInitComplete = true;
 
-                    CalcRestsprünge();
-
-                    break;
-                case "NavRoute":
-                    Model.Events.NavRouteEvent NR = (Model.Events.NavRouteEvent)e.EventObject;
-                    Debug.Print(NR.CRC + " [" + NR.timestamp.ToString() + "] " + NR.Event + " von " + NR.Route[0].StarSystem + " nach " + NR.Route[1].StarSystem);
-
-                    if (NR.Route.Count > 0)
-                    {
-                        SystemAktuell = NR.Route[0].StarSystem;
-                        SystemNächstes = NR.Route[1].StarSystem;
-                        Route = NR.Route;
-                        SystemZiel = NR.Route[NR.Route.Count - 1].StarSystem;
-                        Jumps = NR.Route.Count - 1;
+                        LastAPIIndex = e.Line;
                     }
                     else
                     {
-                        SystemNächstes = string.Empty;
+                        Environment.Exit(0);
                     }
+                }
 
-                    CalcRestsprünge();
+            }
 
-                    break;
-                case "SupercruiseEntry":
-                    Model.Events.SupercruiseEntryEvent SCEN = (Model.Events.SupercruiseEntryEvent)e.EventObject;
-                    Debug.Print("System:" + SCEN.StarSystem);
-                   
-                    break;
-                case "SupercruiseExit":
-                    Model.Events.SupercruiseExitEvent SCEX = (Model.Events.SupercruiseExitEvent)e.EventObject;
-                    Debug.Print("System:" + SCEX.StarSystem);
-                    
-                    break;
-                case "StartJump":
-                    Model.Events.StartJumpEvent SJ = (Model.Events.StartJumpEvent)e.EventObject;
-                    
-                    Debug.Print("Jump-Typ:" + SJ.JumpType);
-                    ;
-                    break;
-                case "JetConeBoost":
-                    Model.Events.JetConeBoostEvent JCB = (Model.Events.JetConeBoostEvent)e.EventObject;
-                    FSDBoost = true;
-                    //LastLoadoutEvent.Modules.FirstOrDefault(x => x.Slot == "FrameShiftDrive").Health = FSDHealth;
-                    //SerializeObjectToXML<Model.Events.LoadoutEvent>(LastLoadoutEvent, Path.Combine(Arbeitsverzeichnis, "Loadout.xml"));
+            if (UserInitComplete)
+            {
+                switch (e.EventName)
+                {
+                    case "Shutdown":
+                        //Nichts zu tun, nur anzeigen und speichern..
+                        SaveRouteFile();
+                        SaveSettings();
+                        ClearUI();
+                        
+                        break;
+                    case "FuelScoop":
+                        Model.Events.FuelScoopEvent FSE = (Model.Events.FuelScoopEvent)e.EventObject;
+                        Debug.Print("Total:" + FSE.Total + " Scooped:" + FSE.Scooped);
+                        break;
+                    case "ReservoirReplenished":
+                        //Model.Events.ReservoirReplenishedEvent RRP = (Model.Events.ReservoirReplenishedEvent)e.EventObject;
+                        break;
+                    case "FSDTarget":
+                        Model.Events.FSDTargetEvent FSDT = (Model.Events.FSDTargetEvent)e.EventObject;
+                        Debug.Print("System:" + FSDT.Name + " Star-Class:" + FSDT.StarClass + " Jumps:" + FSDT.RemainingJumpsInRoute);
+                        Jumps = FSDT.RemainingJumpsInRoute;
 
-                    Debug.Print("BoostValue:" + JCB.BoostValue);
-                    break;
-                case "Location":
-                    Model.Events.LocationEvent Loc = (Model.Events.LocationEvent)e.EventObject;
-                    SystemAktuell = Loc.StarSystem;
-                    Debug.Print("Star-System:" + Loc.StarSystem);
-                    SerializeObjectToXML<Model.Events.LocationEvent>(Loc, Path.Combine(Arbeitsverzeichnis, "Location.xml"));
-                    break;
-                case "ShipLocker":
-                    Model.Events.ShipLockerEvent SL = (Model.Events.ShipLockerEvent)e.EventObject;
-                    Debug.Print("ShipLocker:" + SL.timestamp);
-                    //SerializeObjectToXML<Model.Events.ShipLockerEvent>(SL, Path.Combine(SettingsFolder, "ShipLocker.xml"));
-                    break;
-                case "Status":
-                    Model.Events.StatusEvent S = (Model.Events.StatusEvent)e.EventObject;
+                        SystemNächstes = FSDT.Name;
 
-                    if (S.Destination != null)
-                    {
-                        Debug.Print("[" + S.timestamp + "] Ziel:" + S.Destination.Name + " " + S.Destination.System + S.Destination.Body);
-                    }
-                    else
-                    {
-                        Debug.Print("[" + S.timestamp + "]");
-                    }
+                        CalcRestsprünge();
 
-                    if (S.Fuel != null)
-                    {
-                        FuelMain = S.Fuel.FuelMain;
-                        FuelReservoir = S.Fuel.FuelReservoir;
-                    }
+                        break;
+                    case "FSDJump":
+                        Model.Events.FSDJumpEvent FSDJ = (Model.Events.FSDJumpEvent)e.EventObject;
+                        Debug.Print("Distanz:" + FSDJ.JumpDist + " System:" + FSDJ.StarSystem);
+                        FSDBoost = false;
 
-                    break;
-                case "Loadout":
-                    LastLoadoutEvent = (Model.Events.LoadoutEvent)e.EventObject;
-                    SerializeObjectToXML<Model.Events.LoadoutEvent>(LastLoadoutEvent, Path.Combine(Arbeitsverzeichnis, "Loadout.xml"));
-                    
-                    Debug.Print(LastLoadoutEvent.ModulesValue.ToString());
+                        SystemAktuell = FSDJ.StarSystem;
 
-                    FSDHealth = LastLoadoutEvent.Modules.FirstOrDefault(x => x.Slot == "FrameShiftDrive").Health;
+                        if (Route != null)
+                        {
+                            Model.Events.Part Sys = Route.Find(x => x.StarSystem == SystemAktuell);
 
-                    Debug.Print("### FSD-Health:" + FSDHealth);
+                            int Pos = Route.IndexOf(Sys);
 
-                    break;
-                case "LaunchSRV":
-                    Model.Events.LaunchSRVEvent LSRV = (Model.Events.LaunchSRVEvent)e.EventObject;
-                    Debug.Print("LaunchSRV:" + LSRV.SRVType);
-                    break;
-                case "DockSRV":
-                    Model.Events.DockSRVEvent DSRV = (Model.Events.DockSRVEvent)e.EventObject;
-                    Debug.Print("DockSRV:" + DSRV.SRV);
-                    break;
-                case "ModulesInfo":
-                    Model.Events.ModulesInfoEvent ModInfo = (Model.Events.ModulesInfoEvent)e.EventObject;
-                    Debug.Print("ModuleInfo:" + ModInfo.Modules.Count);
-                    break;
-                case "RepairAll":
-                    _FSDHealth = 1.0; RPCEvent(nameof(FSDHealth));
-                    break;
-                case "AfmuRepairs":
-                    Model.Events.AfmuRepairsEvent AfmuRepairs = (Model.Events.AfmuRepairsEvent)e.EventObject;
-                    if (AfmuRepairs.Module_Localised == "FSA")
-                    {
-                        _FSDHealth = AfmuRepairs.Health;
-                        RPCEvent(nameof(FSDHealth));
-                    }
-                    break;
-                case "ApproachBody":
-                    Model.Events.ApproachBodyEvent ApproachBody = (Model.Events.ApproachBodyEvent)e.EventObject;
-                    Debug.Print("ApproachBody:" + ApproachBody.Body);
-                    break;
-                case "LeaveBody":
-                    Model.Events.LeaveBodyEvent LeaveBody = (Model.Events.LeaveBodyEvent)e.EventObject;
-                    Debug.Print("LeaveBody:" + LeaveBody.Body);
-                    break;
-                case "Touchdown":
-                    Model.Events.TouchdownEvent Touchdown = (Model.Events.TouchdownEvent)e.EventObject;
-                    Debug.Print("Touchdown:" + Touchdown.Body);
-                    break;
-                case "Liftoff":
-                    Model.Events.LiftoffEvent Liftoff = (Model.Events.LiftoffEvent)e.EventObject;
-                    Debug.Print("Liftoff:" + Liftoff.Body);
-                    break;
-                case "Embark":
-                    Model.Events.EmbarkEvent Embark = (Model.Events.EmbarkEvent)e.EventObject;
-                    Debug.Print("Embark:" + Embark.Body);
-                    break;
-                case "Disembark":
-                    Model.Events.DisembarkEvent Disembark = (Model.Events.DisembarkEvent)e.EventObject;
-                    Debug.Print("Disembark:" + Disembark.Body);
-                    break;
-                case "SAAScanComplete":
-                    Model.Events.SAAScanCompleteEvent SAAScanComplete = (Model.Events.SAAScanCompleteEvent)e.EventObject;
-                    Debug.Print("Body:" + SAAScanComplete.BodyName);
-                    break;
-                case "SAASignalsFound":
-                    Model.Events.SAASignalsFoundEvent SAASignalsFound = (Model.Events.SAASignalsFoundEvent)e.EventObject;
-                    Debug.Print("Body:" + SAASignalsFound.BodyName);
-                    break;
-                case "FSSDiscoveryScan":
-                    Model.Events.FSSDiscoveryScanEvent FSSDiscoveryScan = (Model.Events.FSSDiscoveryScanEvent)e.EventObject;
-                    Debug.Print("System:" + FSSDiscoveryScan.SystemName);
-                    break;
-                case "Scan":
-                    Model.Events.ScanEvent Scan = (Model.Events.ScanEvent)e.EventObject;
-                    Debug.Print("Body:" + Scan.BodyName);
-                    break;
-                case "Music":
-                    Model.Events.MusicEvent Music = (Model.Events.MusicEvent)e.EventObject;
-                    Debug.Print("Track:" + Music.MusicTrack);
-                    switch (Music.MusicTrack)
-                    {
-                        case "Supercruise":
-                            LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " Supercruise";
-                            break;
-                        case "SystemAndSurfaceScanner":
-                            LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " SASScanner";
-                            break;
-                        case "GalaxyMap":
-                            LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " GalaxyMap";
-                            break;
-                        case "DestinationFromHyperspace":
-                            LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " HyperspaceDrop";
-                            break;
-                        case "SystemMap":
-                            LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " SystemMap";
-                            break;
-                        case "NoTrack":
-                            break;
-                        case "MainMenu":
-                            LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " MainMenu";
-                            break;
-                        case "Exploration":
-                            LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " Exploration";
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                default:
-                    break;
+                            if (Pos != -1)
+                            {
+                                Jumps = (Route.Count - 1) - Pos;
+                            }
+
+                        }
+
+                        if (RouteAktuell != null)
+                        {
+                            if (RouteAktuell.SetEtappeBesucht(SystemAktuell))
+                            {
+                                SaveRouteFile();
+
+                                RPCEvent(nameof(RouteAktuell));
+
+                                CopyNextSystemToClipBoard();
+                            }
+                        }
+
+                        CalcRestsprünge();
+
+                        break;
+                    case "NavRoute":
+                        Model.Events.NavRouteEvent NR = (Model.Events.NavRouteEvent)e.EventObject;
+                        Debug.Print(NR.CRC + " [" + NR.timestamp.ToString() + "] " + NR.Event + " von " + NR.Route[0].StarSystem + " nach " + NR.Route[1].StarSystem);
+
+                        if (NR.Route.Count > 0)
+                        {
+                            SystemAktuell = NR.Route[0].StarSystem;
+                            SystemNächstes = NR.Route[1].StarSystem;
+                            Route = NR.Route;
+                            SystemZiel = NR.Route[NR.Route.Count - 1].StarSystem;
+                            Jumps = NR.Route.Count - 1;
+                        }
+                        else
+                        {
+                            SystemNächstes = string.Empty;
+                        }
+
+                        CalcRestsprünge();
+
+                        break;
+                    case "SupercruiseEntry":
+                        Model.Events.SupercruiseEntryEvent SCEN = (Model.Events.SupercruiseEntryEvent)e.EventObject;
+                        Debug.Print("System:" + SCEN.StarSystem);
+
+                        break;
+                    case "SupercruiseExit":
+                        Model.Events.SupercruiseExitEvent SCEX = (Model.Events.SupercruiseExitEvent)e.EventObject;
+                        Debug.Print("System:" + SCEX.StarSystem);
+
+                        break;
+                    case "StartJump":
+                        Model.Events.StartJumpEvent SJ = (Model.Events.StartJumpEvent)e.EventObject;
+
+                        Debug.Print("Jump-Typ:" + SJ.JumpType);
+                        ;
+                        break;
+                    case "JetConeBoost":
+                        Model.Events.JetConeBoostEvent JCB = (Model.Events.JetConeBoostEvent)e.EventObject;
+                        FSDBoost = true;
+                        //LastLoadoutEvent.Modules.FirstOrDefault(x => x.Slot == "FrameShiftDrive").Health = FSDHealth;
+                        //SerializeObjectToXML<Model.Events.LoadoutEvent>(LastLoadoutEvent, Path.Combine(Arbeitsverzeichnis, "Loadout.xml"));
+
+                        Debug.Print("BoostValue:" + JCB.BoostValue);
+                        break;
+                    case "Location":
+                        Model.Events.LocationEvent Loc = (Model.Events.LocationEvent)e.EventObject;
+                        SystemAktuell = Loc.StarSystem;
+                        Debug.Print("Star-System:" + Loc.StarSystem);
+                        SerializeObjectToXML<Model.Events.LocationEvent>(Loc, Path.Combine(UserArbeitsverzeichnis, "Location.xml"));
+                        break;
+                    case "ShipLocker":
+                        Model.Events.ShipLockerEvent SL = (Model.Events.ShipLockerEvent)e.EventObject;
+                        Debug.Print("ShipLocker:" + SL.timestamp);
+                        //SerializeObjectToXML<Model.Events.ShipLockerEvent>(SL, Path.Combine(SettingsFolder, "ShipLocker.xml"));
+                        break;
+                    case "Status":
+                        Model.Events.StatusEvent S = (Model.Events.StatusEvent)e.EventObject;
+
+                        if (S.Destination != null)
+                        {
+                            Debug.Print("[" + S.timestamp + "] Ziel:" + S.Destination.Name + " " + S.Destination.System + S.Destination.Body);
+                        }
+                        else
+                        {
+                            Debug.Print("[" + S.timestamp + "]");
+                        }
+
+                        if (S.Fuel != null)
+                        {
+                            FuelMain = S.Fuel.FuelMain;
+                            FuelReservoir = S.Fuel.FuelReservoir;
+                        }
+
+                        break;
+                    case "Loadout":
+                        LastLoadoutEvent = (Model.Events.LoadoutEvent)e.EventObject;
+                        SerializeObjectToXML<Model.Events.LoadoutEvent>(LastLoadoutEvent, Path.Combine(UserArbeitsverzeichnis, "Loadout.xml"));
+
+                        Debug.Print(LastLoadoutEvent.ModulesValue.ToString());
+
+                        FSDHealth = LastLoadoutEvent.Modules.FirstOrDefault(x => x.Slot == "FrameShiftDrive").Health;
+
+                        Debug.Print("### FSD-Health:" + FSDHealth);
+
+                        break;
+                    case "LaunchSRV":
+                        Model.Events.LaunchSRVEvent LSRV = (Model.Events.LaunchSRVEvent)e.EventObject;
+                        Debug.Print("LaunchSRV:" + LSRV.SRVType);
+                        break;
+                    case "DockSRV":
+                        Model.Events.DockSRVEvent DSRV = (Model.Events.DockSRVEvent)e.EventObject;
+                        Debug.Print("DockSRV:" + DSRV.SRV);
+                        break;
+                    case "ModulesInfo":
+                        Model.Events.ModulesInfoEvent ModInfo = (Model.Events.ModulesInfoEvent)e.EventObject;
+                        Debug.Print("ModuleInfo:" + ModInfo.Modules.Count);
+                        break;
+                    case "RepairAll":
+                        _FSDHealth = 1.0; RPCEvent(nameof(FSDHealth));
+                        break;
+                    case "AfmuRepairs":
+                        Model.Events.AfmuRepairsEvent AfmuRepairs = (Model.Events.AfmuRepairsEvent)e.EventObject;
+                        if (AfmuRepairs.Module_Localised == "FSA")
+                        {
+                            _FSDHealth = AfmuRepairs.Health;
+                            RPCEvent(nameof(FSDHealth));
+                        }
+                        break;
+                    case "ApproachBody":
+                        Model.Events.ApproachBodyEvent ApproachBody = (Model.Events.ApproachBodyEvent)e.EventObject;
+                        Debug.Print("ApproachBody:" + ApproachBody.Body);
+                        break;
+                    case "LeaveBody":
+                        Model.Events.LeaveBodyEvent LeaveBody = (Model.Events.LeaveBodyEvent)e.EventObject;
+                        Debug.Print("LeaveBody:" + LeaveBody.Body);
+                        break;
+                    case "Touchdown":
+                        Model.Events.TouchdownEvent Touchdown = (Model.Events.TouchdownEvent)e.EventObject;
+                        Debug.Print("Touchdown:" + Touchdown.Body);
+                        break;
+                    case "Liftoff":
+                        Model.Events.LiftoffEvent Liftoff = (Model.Events.LiftoffEvent)e.EventObject;
+                        Debug.Print("Liftoff:" + Liftoff.Body);
+                        break;
+                    case "Embark":
+                        Model.Events.EmbarkEvent Embark = (Model.Events.EmbarkEvent)e.EventObject;
+                        Debug.Print("Embark:" + Embark.Body);
+                        break;
+                    case "Disembark":
+                        Model.Events.DisembarkEvent Disembark = (Model.Events.DisembarkEvent)e.EventObject;
+                        Debug.Print("Disembark:" + Disembark.Body);
+                        break;
+                    case "SAAScanComplete":
+                        Model.Events.SAAScanCompleteEvent SAAScanComplete = (Model.Events.SAAScanCompleteEvent)e.EventObject;
+                        Debug.Print("Body:" + SAAScanComplete.BodyName);
+                        break;
+                    case "SAASignalsFound":
+                        Model.Events.SAASignalsFoundEvent SAASignalsFound = (Model.Events.SAASignalsFoundEvent)e.EventObject;
+                        Debug.Print("Body:" + SAASignalsFound.BodyName);
+                        break;
+                    case "FSSDiscoveryScan":
+                        Model.Events.FSSDiscoveryScanEvent FSSDiscoveryScan = (Model.Events.FSSDiscoveryScanEvent)e.EventObject;
+                        Debug.Print("System:" + FSSDiscoveryScan.SystemName);
+                        break;
+                    case "Scan":
+                        Model.Events.ScanEvent Scan = (Model.Events.ScanEvent)e.EventObject;
+                        Debug.Print("Body:" + Scan.BodyName);
+                        break;
+                    case "Music":
+                        Model.Events.MusicEvent Music = (Model.Events.MusicEvent)e.EventObject;
+                        Debug.Print("Track:" + Music.MusicTrack);
+
+                        switch (Music.MusicTrack)
+                        {
+                            case "Supercruise":
+                                LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " Supercruise";
+                                break;
+                            case "SystemAndSurfaceScanner":
+                                LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " SASScanner";
+                                break;
+                            case "GalaxyMap":
+                                LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " GalaxyMap";
+                                break;
+                            case "DestinationFromHyperspace":
+                                LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " HyperspaceDrop";
+                                break;
+                            case "SystemMap":
+                                LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " SystemMap";
+                                break;
+                            case "NoTrack":
+                                break;
+                            case "MainMenu":
+                                LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " MainMenu";
+                                ClearUI();
+                                break;
+                            case "Exploration":
+                                LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " Exploration";
+                                break;
+                            default:
+                                break;
+                        }
+
+                        LastAPIIndex = e.Line;
+
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 
@@ -1039,7 +1138,7 @@ namespace EDRouter.ViewModel
             {
                 StopWatcher();
                 
-                RouteAktuell.Clear();
+                RouteAktuell = new Model.Route.ReiseRoute();
                 RouteAktuell.Type = Model.Route.ReiseRoute.RouteType.NR;
 
                 //"System Name","Distance To Arrival","Distance Remaining","Neutron Star","Jumps"
@@ -1066,7 +1165,7 @@ namespace EDRouter.ViewModel
                     RouteAktuell.Add(E);
                 }
 
-                string RouteFileName = Path.Combine(Arbeitsverzeichnis, "Routen", RouteAktuell.GetRouteName + ".xml");
+                string RouteFileName = Path.Combine(UserArbeitsverzeichnis, "Routen", RouteAktuell.GetRouteName + ".xml");
 
                 SerializeObjectToXML<Model.Route.ReiseRoute>(RouteAktuell, RouteFileName);
                 SelectedRoutenFile = new FileInfo(RouteFileName);
@@ -1101,7 +1200,7 @@ namespace EDRouter.ViewModel
             {
                 StopWatcher();
 
-                RouteAktuell.Clear();
+                RouteAktuell = new Model.Route.ReiseRoute();
                 RouteAktuell.Type = Model.Route.ReiseRoute.RouteType.FC;
 
                 //"System Name","Distance To Arrival","Distance Remaining","Neutron Star","Jumps"
@@ -1128,7 +1227,7 @@ namespace EDRouter.ViewModel
                     RouteAktuell.Add(E);
                 }
 
-                string RouteFileName = Path.Combine(Arbeitsverzeichnis, "Routen", RouteAktuell.GetRouteName + ".xml");
+                string RouteFileName = Path.Combine(UserArbeitsverzeichnis, "Routen", RouteAktuell.GetRouteName + ".xml");
 
                 SerializeObjectToXML<Model.Route.ReiseRoute>(RouteAktuell, RouteFileName);
                 SelectedRoutenFile = new FileInfo(RouteFileName);
@@ -1158,7 +1257,7 @@ namespace EDRouter.ViewModel
             {
                 StopWatcher();
 
-                RouteAktuell.Clear();
+                RouteAktuell = new Model.Route.ReiseRoute();
                 RouteAktuell.Type = Model.Route.ReiseRoute.RouteType.RR;
 
                 //"System Name","Distance To Arrival","Distance Remaining","Neutron Star","Jumps"
@@ -1185,7 +1284,7 @@ namespace EDRouter.ViewModel
                     RouteAktuell.Add(E);
                 }
 
-                string RouteFileName = Path.Combine(Arbeitsverzeichnis, "Routen", RouteAktuell.GetRouteName + ".xml");
+                string RouteFileName = Path.Combine(UserArbeitsverzeichnis, "Routen", RouteAktuell.GetRouteName + ".xml");
 
                 SerializeObjectToXML<Model.Route.ReiseRoute>(RouteAktuell, RouteFileName);
                 SelectedRoutenFile = new FileInfo(RouteFileName);
@@ -1252,9 +1351,43 @@ namespace EDRouter.ViewModel
 
         private void SaveRouteFile()
         {
-            string RouteFileName = Path.Combine(Arbeitsverzeichnis, "Routen", RouteAktuell.GetRouteName + ".xml");
+            string RouteFileName = Path.Combine(UserArbeitsverzeichnis, "Routen", RouteAktuell.GetRouteName + ".xml");
 
             SerializeObjectToXML<Model.Route.ReiseRoute>(RouteAktuell, RouteFileName);
+        }
+
+        private void ClearUI()
+        {
+            UserInitComplete = false;
+
+            //ProgramSettings = new Model.Settings();
+
+            LastLoadGameEvent = null;
+            LastLoadoutEvent = null;
+
+            Route = null;
+            RouteAktuell = null;
+
+            SelectedRoutenFile = null;
+            SelectedEtappe = null;
+
+            //AktuelleRoutePath = string.Empty;
+            AktuelleRouteName = string.Empty;
+            SystemAktuell = string.Empty;
+            SystemZiel = string.Empty;
+            SystemNächstes = string.Empty;
+            FuelMain = 0.0;
+            FuelPercent = string.Empty;
+            FuelReservoir = 0.0;
+            Jumps = 0;
+            Restsprünge = 0;
+            Schiff = string.Empty;
+            Tank = 0.0;
+            FSDHealth = 0.0;
+            FSDBoost = false;
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
 
         private void SerializeObjectToXML<T>(T item, string FilePath)

@@ -10,9 +10,10 @@ using System.Threading.Tasks;
 using System.Windows.Threading;
 using System.Xml.Serialization;
 
+
 namespace EDRouter.Model.Json
 {
-    public enum Verfügbarkeitswert { rar, normal, häufig, kaufbar, unbestimmt }
+    //public enum Verfügbarkeitswert { rar, normal, häufig, kaufbar, unbestimmt }
 
     class JsonWatcher : Model.ModelBase
     {
@@ -22,11 +23,11 @@ namespace EDRouter.Model.Json
 
         private bool ExtendetEvents { get; set; } = false;
 
-        public event EventHandler<EventRaisedEventArgs> EventRaised;
+        public event EventHandler<Model.Events.EventRaisedEventArgs> EventRaised;
 
-        protected virtual void OnEventRaised(EventRaisedEventArgs e)
+        protected virtual void OnEventRaised(Model.Events.EventRaisedEventArgs e)
         {
-            EventHandler<EventRaisedEventArgs> handler = EventRaised;
+            EventHandler<Model.Events.EventRaisedEventArgs> handler = EventRaised;
 
             if (handler != null)
             {
@@ -91,9 +92,13 @@ namespace EDRouter.Model.Json
         private DateTime LastNavRouteTimeStamp = new DateTime(1, 1, 1);
         private DateTime LastStatusTimeStamp = new DateTime(1, 1, 1);
 
-        private DateTime TimeStampMax { get; set; } = DateTime.Now;
+        //private DateTime LastTimeStampMax { get; set; } = new DateTime(1,1,1);
 
         private DateTime LastEDLogTime { get; set; }
+
+        private bool InGame { get; set; } = false;
+
+        private int LastLineIndex { get; set; } = -1;
 
         private void GetStatusJson(string path)
         {
@@ -113,7 +118,7 @@ namespace EDRouter.Model.Json
 
                                 Status = JsonSerializer.Deserialize<Model.Events.StatusEvent>(JsonText);
 
-                                OnEventRaised(new EventRaisedEventArgs(Status, Status.Event));
+                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Status, Status.Event,0));
                             }
                         }
                     }
@@ -142,7 +147,7 @@ namespace EDRouter.Model.Json
                                 string JsonText = sr.ReadToEnd();
 
                                 NaveRoute = JsonSerializer.Deserialize<Model.Events.NavRouteEvent>(JsonText);
-                                OnEventRaised(new EventRaisedEventArgs(NaveRoute, NaveRoute.Event));
+                                OnEventRaised(new Model.Events.EventRaisedEventArgs(NaveRoute, NaveRoute.Event,0));
                             }
                         }
                     }
@@ -171,7 +176,7 @@ namespace EDRouter.Model.Json
                                 string JsonText = sr.ReadToEnd();
 
                                 Module = JsonSerializer.Deserialize<Model.Events.ModulesInfoEvent>(JsonText);
-                                OnEventRaised(new EventRaisedEventArgs(Module, Module.Event));
+                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Module, Module.Event,0));
                             }
                         }
                     }
@@ -187,263 +192,283 @@ namespace EDRouter.Model.Json
         {
             if (File.Exists(path))
             {
-                using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                if (LastLineIndex == -1)
                 {
-                    if (fs.CanRead)
+                    //TODO: Prüfen ob es hier richtig ist!!!
+                    LastLineIndex = GetLastLoadGameLine(path);
+                }
+
+                if (LastLineIndex > 0 && InGame)
+                {
+                    using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
                     {
-                        using (var sr = new StreamReader(fs))
+                        if (fs.CanRead)
                         {
-                            string line;
-                            int Index = 0;
-
-                            Events.EventBase EventTest = new Events.EventBase();
-
-                            while ((line = sr.ReadLine()) != null)
+                            using (var sr = new StreamReader(fs))
                             {
-                                EventTest = JsonSerializer.Deserialize<Model.Events.EventBase>(line);
+                                string line;
+                                int Index = 0;
 
-                                if (EventTest.timestamp > TimeStampMax)
+                                Events.EventBase EventTest = new Events.EventBase();
+
+                                while ((line = sr.ReadLine()) != null)
                                 {
-                                    string EventStrg = line.Substring(47, line.IndexOf('\"', 47) - 47);
+                                    //EventTest = JsonSerializer.Deserialize<Model.Events.EventBase>(line);
 
-                                    switch (EventStrg)
+                                    if (Index >= LastLineIndex)
                                     {
-                                        //case "ReceiveText":
-                                        //case "Powerplay":
-                                        //case "Music":
-                                        //case "Missions":
-                                        //case "NpcCrewPaidWage":
-                                        //case "Cargo":
-                                        //case "MissionFailed":
-                                        //case "FSSSignalDiscovered":
-                                        //case "FSSAllBodiesFound":
-                                        case "Music":
-                                            Model.Events.MusicEvent Music = JsonSerializer.Deserialize<Model.Events.MusicEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(Music, Music.Event));
-                                            break;
-                                        case "FuelScoop":
-                                            Model.Events.FuelScoopEvent FuelScoop = JsonSerializer.Deserialize<Model.Events.FuelScoopEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(FuelScoop, FuelScoop.Event));
-                                            break;
-                                        case "ReservoirReplenished":
-                                            break;
-                                        case "FSDTarget":
-                                            Model.Events.FSDTargetEvent FSDTarget = JsonSerializer.Deserialize<Model.Events.FSDTargetEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(FSDTarget, FSDTarget.Event));
-                                            break;
-                                        case "FSDJump":
-                                            Model.Events.FSDJumpEvent FSDJump = JsonSerializer.Deserialize<Model.Events.FSDJumpEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(FSDJump, FSDJump.Event));
-                                            break;
-                                        case "NavRoute":
-                                            break;
-                                        case "SupercruiseEntry":
-                                            Model.Events.SupercruiseEntryEvent SupercruiseEntry = JsonSerializer.Deserialize<Model.Events.SupercruiseEntryEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(SupercruiseEntry, SupercruiseEntry.Event));
-                                            break;
-                                        case "SupercruiseExit":
-                                            Model.Events.SupercruiseExitEvent SupercruiseExit = JsonSerializer.Deserialize<Model.Events.SupercruiseExitEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(SupercruiseExit, SupercruiseExit.Event));
-                                            break;
-                                        case "StartJump":
-                                            Model.Events.StartJumpEvent StartJump = JsonSerializer.Deserialize<Model.Events.StartJumpEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(StartJump, StartJump.Event));
-                                            break;
-                                        //case "LaunchSRV":
-                                        //    Model.Events.LaunchSRVEvent LauchSRV = JsonSerializer.Deserialize<Model.Events.LaunchSRVEvent>(line);
-                                        //    OnEventRaised(new EventRaisedEventArgs(LauchSRV, LauchSRV.Event));
-                                        //    break;
-                                        //case "DockSRV":
-                                        //    Model.Events.DockSRVEvent DockSRV = JsonSerializer.Deserialize<Model.Events.DockSRVEvent>(line);
-                                        //    OnEventRaised(new EventRaisedEventArgs(DockSRV, DockSRV.Event));
-                                        //    break;
-                                        //case "LaunchFighter":
-                                        //case "ShipTargeted":
-                                        //case "Bounty":
-                                        //case "UnderAttack":
-                                        //case "Scanned":
-                                        //case "Scan":
-                                        case "JetConeBoost":
-                                            Model.Events.JetConeBoostEvent JetConeBoost = JsonSerializer.Deserialize<Model.Events.JetConeBoostEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(JetConeBoost, JetConeBoost.Event));
-                                            break;
-                                        //case "Friends":
-                                        //case "Shutdown":
-                                        //    break;
-                                        //case "Undocked":
-                                        //case "SquadronStartup":
-                                        //case "ModuleInfo":
-                                        //case "FighterDestroyed":
-                                        //case "FighterRebuilt":
-                                        //case "DockFighter":
-                                        //case "SAASignalsFound":
-                                        case "ApproachBody":
-                                            Model.Events.ApproachBodyEvent ApproachBody = JsonSerializer.Deserialize<Model.Events.ApproachBodyEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(ApproachBody, ApproachBody.Event));
-                                            break;
-                                        case "LeaveBody":
-                                            Model.Events.LeaveBodyEvent LeaveBody = JsonSerializer.Deserialize<Model.Events.LeaveBodyEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(LeaveBody, LeaveBody.Event));
-                                            break;
-                                        case "Touchdown":
-                                            Model.Events.TouchdownEvent Touchdown = JsonSerializer.Deserialize<Model.Events.TouchdownEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(Touchdown, Touchdown.Event));
-                                            break;
-                                        case "Liftoff":
-                                            Model.Events.LiftoffEvent Liftoff = JsonSerializer.Deserialize<Model.Events.LiftoffEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(Liftoff, Liftoff.Event));
-                                            break;
-                                        case "Embark":
-                                            Model.Events.EmbarkEvent Embark = JsonSerializer.Deserialize<Model.Events.EmbarkEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(Embark, Embark.Event));
-                                            break;
-                                        case "Disembark":
-                                            Model.Events.DisembarkEvent Disembark = JsonSerializer.Deserialize<Model.Events.DisembarkEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(Disembark, Disembark.Event));
-                                            break;
-                                        case "RepairAll":
-                                            Model.Events.RepairAllEvent RepairAll = JsonSerializer.Deserialize<Model.Events.RepairAllEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(RepairAll, RepairAll.Event));
-                                            break;
-                                        case "AfmuRepairs":
-                                            Model.Events.AfmuRepairsEvent AfmuRepairs = JsonSerializer.Deserialize<Model.Events.AfmuRepairsEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(AfmuRepairs, AfmuRepairs.Event));
-                                            break;
-                                        //case "RedeemVoucher":
-                                        //case "RestockVehicle":
-                                        //case "ShipyardSwap":
-                                        //case "PayFines":
-                                        //case "BuyMicroResources":
-                                        //case "SwitchSuitLoadout":
-                                        //case "DropItems":
-                                        //case "ScanBaryCentre":
-                                        //case "ShieldState":
-                                        //case "EscapeInterdiction":
-                                        //case "BuyAmmo":
-                                        //case "ApproachBody":
-                                        //case "Touchdown":
-                                        //case "BackpackChange":
-                                        //case "Embark":
-                                        //case "Liftoff":
-                                        //case "TradeMicroResources":
-                                        //case "SellMicroResources":
+                                        string EventStrg = line.Substring(47, line.IndexOf('\"', 47) - 47);
+                                        Debug.Print("Last Log-Event:" + EventStrg + " [Line " + LastLineIndex.ToString() + "]");
 
-                                        //    break;
-                                        case "LoadGame":
-                                            Model.Events.LoadGameEvent LoadGame = JsonSerializer.Deserialize<Model.Events.LoadGameEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(LoadGame, LoadGame.Event));
-                                            break;
-                                        case "EngineerProgress":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.EngineerProgressEvent EngineerProgress = JsonSerializer.Deserialize<Model.Events.EngineerProgressEvent>(line);
-                                                EngineerProgress.Engineers.Sort();
-                                            }
-                                            break;
-                                        case "Fileheader":
-                                            Model.Events.FileHeaderEvent Fileheader = JsonSerializer.Deserialize<Model.Events.FileHeaderEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(Fileheader, Fileheader.Event));
-                                            break;
-                                        case "Commander":
-                                            Model.Events.CommanderEvent Commander = JsonSerializer.Deserialize<Model.Events.CommanderEvent>(line);
-                                            CommanderProperty = Commander.Name;
-                                            OnEventRaised(new EventRaisedEventArgs(Commander, Commander.Event));
-                                            break;
-                                        case "ShipLocker":
-                                            //Model.Events.ShipLockerEvent ShipLocker = JsonSerializer.Deserialize<Model.Events.ShipLockerEvent>(line);
-                                            //OnEventRaised(new EventRaisedEventArgs(ShipLocker, ShipLocker.Event));
-                                            break;
-                                        case "Materials":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.MaterialsEvent Materials = JsonSerializer.Deserialize<Model.Events.MaterialsEvent>(line);
-                                            }
-                                            break;
-                                        case "Rank":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.RankEvent Rank = JsonSerializer.Deserialize<Model.Events.RankEvent>(line);
-                                            }
-                                            break;
-                                        case "Progress":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.ProgressEvent Progress = JsonSerializer.Deserialize<Model.Events.ProgressEvent>(line);
-                                            }
-                                            break;
-                                        case "Reputation":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.ReputationEvent Reputation = JsonSerializer.Deserialize<Model.Events.ReputationEvent>(line);
-                                            }
-                                            break;
-                                        case "Location":
-                                            Model.Events.LocationEvent Location = JsonSerializer.Deserialize<Model.Events.LocationEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(Location, Location.Event));
-                                            break;
-                                        case "Statistics":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.StatisticsEvent Statistics = JsonSerializer.Deserialize<Model.Events.StatisticsEvent>(line);
-                                                OnEventRaised(new EventRaisedEventArgs(Statistics, Statistics.Event));
-                                            }
-                                            break;
-                                        case "Loadout":
-                                            Model.Events.LoadoutEvent Loadout = JsonSerializer.Deserialize<Model.Events.LoadoutEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(Loadout, Loadout.Event));
-                                            break;
-                                        case "Shutdown":
-                                            Model.Events.ShutdownEvent Shutdown = JsonSerializer.Deserialize<Model.Events.ShutdownEvent>(line);
-                                            OnEventRaised(new EventRaisedEventArgs(Shutdown, Shutdown.Event));
-                                            break;
-                                        case "SAAScanComplete":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.SAAScanCompleteEvent SAAScanComplete = JsonSerializer.Deserialize<Model.Events.SAAScanCompleteEvent>(line);
-                                                OnEventRaised(new EventRaisedEventArgs(SAAScanComplete, SAAScanComplete.Event));
-                                            }
-                                            break;
-                                        case "SAASignalsFound":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.SAASignalsFoundEvent SAASignalsFound = JsonSerializer.Deserialize<Model.Events.SAASignalsFoundEvent>(line);
-                                                OnEventRaised(new EventRaisedEventArgs(SAASignalsFound, SAASignalsFound.Event));
-                                            }
-                                            break;
-                                        case "FSSDiscoveryScan":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.FSSDiscoveryScanEvent FSSDiscoveryScan = JsonSerializer.Deserialize<Model.Events.FSSDiscoveryScanEvent>(line);
-                                                OnEventRaised(new EventRaisedEventArgs(FSSDiscoveryScan, FSSDiscoveryScan.Event));
-                                            }
-                                            break;
-                                        case "Scan":
-                                            if (ExtendetEvents)
-                                            {
-                                                Model.Events.ScanEvent Scan = JsonSerializer.Deserialize<Model.Events.ScanEvent>(line);
-                                                OnEventRaised(new EventRaisedEventArgs(Scan, Scan.Event));
-                                            }
-                                            break;
+                                        switch (EventStrg)
+                                        {
+                                            //case "LaunchSRV":
+                                            //    Model.Events.LaunchSRVEvent LauchSRV = JsonSerializer.Deserialize<Model.Events.LaunchSRVEvent>(line);
+                                            //    OnEventRaised(new EventRaisedEventArgs(LauchSRV, LauchSRV.Event));
+                                            //    break;
+                                            //case "DockSRV":
+                                            //    Model.Events.DockSRVEvent DockSRV = JsonSerializer.Deserialize<Model.Events.DockSRVEvent>(line);
+                                            //    OnEventRaised(new EventRaisedEventArgs(DockSRV, DockSRV.Event));
+                                            //    break;
+                                            //case "FSSSignalDiscovered":
+                                            //case "FSSAllBodiesFound":
+                                            case "Fileheader":
+                                                Model.Events.FileHeaderEvent Fileheader = JsonSerializer.Deserialize<Model.Events.FileHeaderEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Fileheader, Fileheader.Event, Index));
+                                                break;
+                                            case "Commander":
+                                                Model.Events.CommanderEvent Commander = JsonSerializer.Deserialize<Model.Events.CommanderEvent>(line);
+                                                CommanderProperty = Commander.Name;
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Commander, Commander.Event, Index));
+                                                break;
+                                            case "LoadGame":
+                                                Model.Events.LoadGameEvent LoadGame = JsonSerializer.Deserialize<Model.Events.LoadGameEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(LoadGame, LoadGame.Event, Index));
+                                                break;
+                                            case "Music":
+                                                Model.Events.MusicEvent Music = JsonSerializer.Deserialize<Model.Events.MusicEvent>(line);
 
-                                        default:
-                                            break;
+                                                if (Music.MusicTrack == "MainMenu")
+                                                {
+                                                    InGame = false;
+                                                    LastLineIndex = -1;
+                                                    OnEventRaised(new Model.Events.EventRaisedEventArgs(Music, Music.Event, Index));
+                                                    return;
+                                                }
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Music, Music.Event, Index));
+                                                break;
+                                            case "Loadout":
+                                                Model.Events.LoadoutEvent Loadout = JsonSerializer.Deserialize<Model.Events.LoadoutEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Loadout, Loadout.Event, Index));
+                                                break;
+                                            case "Shutdown":
+                                                Model.Events.ShutdownEvent Shutdown = JsonSerializer.Deserialize<Model.Events.ShutdownEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Shutdown, Shutdown.Event, Index));
+                                                LastLineIndex = -1;
+                                                InGame = false;
+                                                return;
+                                            case "Location":
+                                                Model.Events.LocationEvent Location = JsonSerializer.Deserialize<Model.Events.LocationEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Location, Location.Event, Index));
+                                                break;
+                                            case "FuelScoop":
+                                                Model.Events.FuelScoopEvent FuelScoop = JsonSerializer.Deserialize<Model.Events.FuelScoopEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(FuelScoop, FuelScoop.Event, Index));
+                                                break;
+                                            case "FSDTarget":
+                                                Model.Events.FSDTargetEvent FSDTarget = JsonSerializer.Deserialize<Model.Events.FSDTargetEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(FSDTarget, FSDTarget.Event, Index));
+                                                break;
+                                            case "FSDJump":
+                                                Model.Events.FSDJumpEvent FSDJump = JsonSerializer.Deserialize<Model.Events.FSDJumpEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(FSDJump, FSDJump.Event, Index));
+                                                break;
+                                            case "SupercruiseEntry":
+                                                Model.Events.SupercruiseEntryEvent SupercruiseEntry = JsonSerializer.Deserialize<Model.Events.SupercruiseEntryEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(SupercruiseEntry, SupercruiseEntry.Event, Index));
+                                                break;
+                                            case "SupercruiseExit":
+                                                Model.Events.SupercruiseExitEvent SupercruiseExit = JsonSerializer.Deserialize<Model.Events.SupercruiseExitEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(SupercruiseExit, SupercruiseExit.Event, Index));
+                                                break;
+                                            case "StartJump":
+                                                Model.Events.StartJumpEvent StartJump = JsonSerializer.Deserialize<Model.Events.StartJumpEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(StartJump, StartJump.Event, Index));
+                                                break;
+                                            case "JetConeBoost":
+                                                Model.Events.JetConeBoostEvent JetConeBoost = JsonSerializer.Deserialize<Model.Events.JetConeBoostEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(JetConeBoost, JetConeBoost.Event, Index));
+                                                break;
+                                            case "ApproachBody":
+                                                Model.Events.ApproachBodyEvent ApproachBody = JsonSerializer.Deserialize<Model.Events.ApproachBodyEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(ApproachBody, ApproachBody.Event, Index));
+                                                break;
+                                            case "LeaveBody":
+                                                Model.Events.LeaveBodyEvent LeaveBody = JsonSerializer.Deserialize<Model.Events.LeaveBodyEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(LeaveBody, LeaveBody.Event, Index));
+                                                break;
+                                            case "Touchdown":
+                                                Model.Events.TouchdownEvent Touchdown = JsonSerializer.Deserialize<Model.Events.TouchdownEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Touchdown, Touchdown.Event, Index));
+                                                break;
+                                            case "Liftoff":
+                                                Model.Events.LiftoffEvent Liftoff = JsonSerializer.Deserialize<Model.Events.LiftoffEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Liftoff, Liftoff.Event, Index));
+                                                break;
+                                            case "Embark":
+                                                Model.Events.EmbarkEvent Embark = JsonSerializer.Deserialize<Model.Events.EmbarkEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Embark, Embark.Event, Index));
+                                                break;
+                                            case "Disembark":
+                                                Model.Events.DisembarkEvent Disembark = JsonSerializer.Deserialize<Model.Events.DisembarkEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(Disembark, Disembark.Event, Index));
+                                                break;
+                                            case "RepairAll":
+                                                Model.Events.RepairAllEvent RepairAll = JsonSerializer.Deserialize<Model.Events.RepairAllEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(RepairAll, RepairAll.Event, Index));
+                                                break;
+                                            case "AfmuRepairs":
+                                                Model.Events.AfmuRepairsEvent AfmuRepairs = JsonSerializer.Deserialize<Model.Events.AfmuRepairsEvent>(line);
+                                                OnEventRaised(new Model.Events.EventRaisedEventArgs(AfmuRepairs, AfmuRepairs.Event, Index));
+                                                break;
+
+                                            case "EngineerProgress":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.EngineerProgressEvent EngineerProgress = JsonSerializer.Deserialize<Model.Events.EngineerProgressEvent>(line);
+                                                    EngineerProgress.Engineers.Sort();
+                                                }
+                                                break;
+                                            case "ShipLocker":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.ShipLockerEvent ShipLocker = JsonSerializer.Deserialize<Model.Events.ShipLockerEvent>(line);
+                                                    OnEventRaised(new Model.Events.EventRaisedEventArgs(ShipLocker, ShipLocker.Event, Index));
+                                                }
+                                                break;
+                                            case "Materials":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.MaterialsEvent Materials = JsonSerializer.Deserialize<Model.Events.MaterialsEvent>(line);
+                                                }
+                                                break;
+                                            case "Rank":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.RankEvent Rank = JsonSerializer.Deserialize<Model.Events.RankEvent>(line);
+                                                }
+                                                break;
+                                            case "Progress":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.ProgressEvent Progress = JsonSerializer.Deserialize<Model.Events.ProgressEvent>(line);
+                                                }
+                                                break;
+                                            case "Reputation":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.ReputationEvent Reputation = JsonSerializer.Deserialize<Model.Events.ReputationEvent>(line);
+                                                }
+                                                break;
+
+                                            case "Statistics":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.StatisticsEvent Statistics = JsonSerializer.Deserialize<Model.Events.StatisticsEvent>(line);
+                                                    OnEventRaised(new Model.Events.EventRaisedEventArgs(Statistics, Statistics.Event, Index));
+                                                }
+                                                break;
+
+                                            case "SAAScanComplete":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.SAAScanCompleteEvent SAAScanComplete = JsonSerializer.Deserialize<Model.Events.SAAScanCompleteEvent>(line);
+                                                    OnEventRaised(new Model.Events.EventRaisedEventArgs(SAAScanComplete, SAAScanComplete.Event, Index));
+                                                }
+                                                break;
+                                            case "SAASignalsFound":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.SAASignalsFoundEvent SAASignalsFound = JsonSerializer.Deserialize<Model.Events.SAASignalsFoundEvent>(line);
+                                                    OnEventRaised(new Model.Events.EventRaisedEventArgs(SAASignalsFound, SAASignalsFound.Event, Index));
+                                                }
+                                                break;
+                                            case "FSSDiscoveryScan":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.FSSDiscoveryScanEvent FSSDiscoveryScan = JsonSerializer.Deserialize<Model.Events.FSSDiscoveryScanEvent>(line);
+                                                    OnEventRaised(new Model.Events.EventRaisedEventArgs(FSSDiscoveryScan, FSSDiscoveryScan.Event, Index));
+                                                }
+                                                break;
+                                            case "Scan":
+                                                if (ExtendetEvents)
+                                                {
+                                                    Model.Events.ScanEvent Scan = JsonSerializer.Deserialize<Model.Events.ScanEvent>(line);
+                                                    OnEventRaised(new Model.Events.EventRaisedEventArgs(Scan, Scan.Event, Index));
+                                                }
+                                                break;
+                                            //case "ReceiveText":
+                                            //case "ReservoirReplenished":
+                                            //case "RedeemVoucher":
+                                            //case "RestockVehicle":
+                                            //case "ShipyardSwap":
+                                            //case "PayFines":
+                                            //case "BuyMicroResources":
+                                            //case "SwitchSuitLoadout":
+                                            //case "DropItems":
+                                            //case "ScanBaryCentre":
+                                            //case "ShieldState":
+                                            //case "EscapeInterdiction":
+                                            //case "BuyAmmo":
+                                            //case "BackpackChange":
+                                            //case "TradeMicroResources":
+                                            //case "SellMicroResources":
+                                            //case "Friends":
+                                            //case "Undocked":
+                                            //case "SquadronStartup":
+                                            //case "ModuleInfo":
+                                            //case "FighterDestroyed":
+                                            //case "FighterRebuilt":
+                                            //case "DockFighter":
+                                            //case "LaunchFighter":
+                                            //case "ShipTargeted":
+                                            //case "Bounty":
+                                            //case "UnderAttack":
+                                            //case "Scanned":
+                                            //case "Powerplay":
+                                            //case "Missions":
+                                            //case "NpcCrewPaidWage":
+                                            //case "Cargo":
+                                            //case "MissionFailed":
+                                            default:
+                                                break;
+                                        }
+
+                                        //LastTimeStampMax = EventTest.timestamp;
                                     }
 
-                                    Debug.Print("Last Log-Event:" + EventStrg + " [" + TimeStampMax.ToString() +"]");
+                                    Index++;
                                 }
-                                
-                                Index++;
-                            }
 
-                            TimeStampMax = EventTest.timestamp;
+                                LastLineIndex = Index; 
+                                //LastTimeStampMax += new TimeSpan(0, 0, 1);//EventTest.timestamp;
+                            }
                         }
                     }
+                }
+                else
+                {
+                    LastLineIndex = -1;
+                    InGame = false;
+                    OnEventRaised(new Model.Events.EventRaisedEventArgs(new Events.ShutdownEvent(),"Shutdown",-1));
                 }
             }
         }
 
-        private void GetLastTimeStamp(string path)
+        private int GetLastLoadGameLine(string path)
         {
+            int LastLoadGameIndex = -1;
+
             if (File.Exists(path))
             {
                 using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
@@ -452,25 +477,54 @@ namespace EDRouter.Model.Json
                     {
                         using (var sr = new StreamReader(fs))
                         {
+                           
+                            int LineIndex = 0;
                             string line;
 
                             while ((line = sr.ReadLine()) != null)
                             {
-                                string EventStrg = line.Substring(47, line.IndexOf('\"', 47) - 47);
-
-                                Events.EventBase EventTest = JsonSerializer.Deserialize<Model.Events.EventBase>(line);
-
-                                if (EventTest.timestamp > TimeStampMax)
+                                if (LineIndex > LastLineIndex)
                                 {
-                                    TimeStampMax = EventTest.timestamp;
+
+                                    string EventStrg = line.Substring(47, line.IndexOf('\"', 47) - 47);
+
+                                    Events.EventBase EventTest = JsonSerializer.Deserialize<Model.Events.EventBase>(line);
+
+                                    if (EventStrg == "LoadGame")
+                                    {
+                                        InGame = true;
+                                        LastLoadGameIndex = LineIndex;
+                                        //TODO: Position des Letzen Zeichens im Bytearray
+                                    }
+                                    else if (EventStrg == "Music")
+                                    {
+                                        Events.MusicEvent musik = JsonSerializer.Deserialize<Model.Events.MusicEvent>(line);
+
+                                        if (musik.MusicTrack == "MainMenu")
+                                        {
+                                            InGame = false;
+                                            LastLineIndex = -1;
+                                        }
+                                    }
+                                    else if (EventStrg == "Shutdown")
+                                    {
+                                        InGame = false;
+                                        LastLineIndex = -1;
+                                    }
                                 }
+
+                                LineIndex++;
                             }
+
+                            return LastLoadGameIndex;
                         }
                     }
                 }
                 
-                Debug.Print("Last Journal Timestamp:" + TimeStampMax.ToString());
+                Debug.Print("Last Journal LoadGame Line:" + LastLoadGameIndex.ToString());
             }
+
+            return -1;
         }
 
         public string GetLastJournalFile(string path)
@@ -489,6 +543,7 @@ namespace EDRouter.Model.Json
                 if (Directory.Exists(JournalFolderPath))
                 {
                     _JournalFolder = JournalFolderPath;
+
                     InitWatcher();
                 }
                 else
@@ -502,9 +557,9 @@ namespace EDRouter.Model.Json
             }
         }
 
-
         private void InitWatcher()
         {
+
             watcher = new FileSystemWatcher(JournalFolder);
 
             watcher.NotifyFilter = NotifyFilters.Attributes
@@ -593,15 +648,5 @@ namespace EDRouter.Model.Json
 
     }
 
-    public class EventRaisedEventArgs : EventArgs
-    {
-        public string EventName { get; set; }
-        public object EventObject { get; set; }
 
-        public EventRaisedEventArgs(object Event,string name) 
-        {
-            EventObject = Event;
-            EventName = name;
-        }
-    }
 }

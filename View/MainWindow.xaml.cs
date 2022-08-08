@@ -54,5 +54,15 @@ namespace EDRouter.View
                 DGVRoute.ScrollIntoView(currentPos);
             }
         }
+
+        private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            TextBlock tb = (TextBlock)sender;
+
+            if (e.ClickCount == 2)
+            {
+                Clipboard.SetText(tb.Text);
+            }
+        }
     }
 }
