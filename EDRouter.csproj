@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <TargetFramework>net5.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Authors>Sh4DOWM4K3R</Authors>
     <Description>Automatisierung von Spansh Routendateien im Spiel Elite Dangerous</Description>
     <Copyright>Sh4DOWM4K3R</Copyright>
     <PackageProjectUrl>http://www.errorbit.de/category/downloads/</PackageProjectUrl>
-    <Version>0.3.3</Version>
+    <Version>0.4.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

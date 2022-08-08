@@ -18,7 +18,7 @@ namespace EDRouter.ViewModel
         #region Declarations..
 
         public static string Titel { get { return System.Reflection.Assembly.GetExecutingAssembly().GetName().Name + " Version " +
-                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version + " .NET Core 3.1" + 
+                    System.Reflection.Assembly.GetExecutingAssembly().GetName().Version + " .NET Framework 5.0" + 
                     " [SH4DOWM4K3R " + DateTime.Now.Year + "]"; } }
 
         public string Arbeitsverzeichnis { get { return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData).ToString() + "\\EDRouter"; } }
