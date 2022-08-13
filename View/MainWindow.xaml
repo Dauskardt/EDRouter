@@ -14,7 +14,7 @@
         MinWidth="920"
         Top="{Binding ProgramSettings.WindowTop, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
         Left="{Binding ProgramSettings.WindowLeft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" 
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Style="{DynamicResource CustomWindowStyle}" Closing="Window_Closing" >
     <Window.DataContext>
         <ViewModel:ViewModelMain/>
@@ -287,7 +287,7 @@
                 </Grid>
             </GroupBox>
         </Grid>
-        <TextBlock Grid.Column="2" Text="Bitte Spiel starten.." FontSize="60" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding UserInitComplete, Converter={StaticResource InvertableBooleanToVisibilityConverter}, ConverterParameter=Inverted}"/>
+        <TextBlock Grid.Column="2" Text="Zur Initialisierung bitte das Spiel starten.." TextWrapping="WrapWithOverflow"  FontSize="60" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="{Binding UserInitComplete, Converter={StaticResource InvertableBooleanToVisibilityConverter}, ConverterParameter=Inverted}"/>
         <ToggleButton Grid.Column="3" IsChecked="{Binding FileBrowserExpanded}" Width="25" HorizontalContentAlignment="Center" VerticalContentAlignment="Top" ToolTip="Dateimanager öffnen/schliessen">
             <ToggleButton.Style>
                 <Style TargetType="{x:Type ToggleButton}">

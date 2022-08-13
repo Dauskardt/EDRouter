@@ -195,7 +195,7 @@ namespace EDRouter.Model.Json
                 if (LastLineIndex == -1)
                 {
                     //TODO: Prüfen ob es hier richtig ist!!!
-                    LastLineIndex = GetLastLoadGameLine(path);
+                    LastLineIndex = GetLastCommanderEventLine(path);
                 }
 
                 if (LastLineIndex > 0 && InGame)
@@ -252,9 +252,10 @@ namespace EDRouter.Model.Json
                                                 {
                                                     InGame = false;
                                                     LastLineIndex = -1;
-                                                    OnEventRaised(new Model.Events.EventRaisedEventArgs(Music, Music.Event, Index));
+                                                    OnEventRaised(new Model.Events.EventRaisedEventArgs(new Model.Events.MainMenuEvent(Music.timestamp), "MainMenu", Index));
                                                     return;
                                                 }
+
                                                 OnEventRaised(new Model.Events.EventRaisedEventArgs(Music, Music.Event, Index));
                                                 break;
                                             case "Loadout":
@@ -465,9 +466,9 @@ namespace EDRouter.Model.Json
             }
         }
 
-        private int GetLastLoadGameLine(string path)
+        private int GetLastCommanderEventLine(string path)
         {
-            int LastLoadGameIndex = -1;
+            int LastCommanderEventIndex = -1;
 
             if (File.Exists(path))
             {
@@ -490,10 +491,10 @@ namespace EDRouter.Model.Json
 
                                     Events.EventBase EventTest = JsonSerializer.Deserialize<Model.Events.EventBase>(line);
 
-                                    if (EventStrg == "LoadGame")
+                                    if (EventStrg == "Commander") // War LoadGame
                                     {
                                         InGame = true;
-                                        LastLoadGameIndex = LineIndex;
+                                        LastCommanderEventIndex = LineIndex;
                                         //TODO: Position des Letzen Zeichens im Bytearray
                                     }
                                     else if (EventStrg == "Music")
@@ -516,12 +517,12 @@ namespace EDRouter.Model.Json
                                 LineIndex++;
                             }
 
-                            return LastLoadGameIndex;
+                            return LastCommanderEventIndex;
                         }
                     }
                 }
                 
-                Debug.Print("Last Journal LoadGame Line:" + LastLoadGameIndex.ToString());
+                Debug.Print("Last Journal Commander Line:" + LastCommanderEventIndex.ToString());
             }
 
             return -1;

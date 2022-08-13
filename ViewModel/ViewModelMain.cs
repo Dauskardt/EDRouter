@@ -740,6 +740,10 @@ namespace EDRouter.ViewModel
                         ClearUI();
                         
                         break;
+                    case "MainMenu":
+                        LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " MainMenu";
+                        ClearUI();
+                        break;
                     case "FuelScoop":
                         Model.Events.FuelScoopEvent FSE = (Model.Events.FuelScoopEvent)e.EventObject;
                         Debug.Print("Total:" + FSE.Total + " Scooped:" + FSE.Scooped);
@@ -963,10 +967,10 @@ namespace EDRouter.ViewModel
                                 break;
                             case "NoTrack":
                                 break;
-                            case "MainMenu":
-                                LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " MainMenu";
-                                ClearUI();
-                                break;
+                            //case "MainMenu":
+                            //    LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " MainMenu";
+                            //    ClearUI();
+                            //    break;
                             case "Exploration":
                                 LastAPIMessage = DateTime.Now.ToString("HH:mm:ss") + " Exploration";
                                 break;
